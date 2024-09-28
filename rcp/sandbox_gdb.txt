@@ -1,0 +1,10 @@
+gdb
+--nx
+--quiet
+--batch
+--eval-command 'set debuginfod enabled off'
+--eval-command 'set print pretty on'
+--eval-command 'run'
+--eval-command 'backtrace'
+--eval-command 'quit'
+--args

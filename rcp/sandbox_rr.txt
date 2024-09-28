@@ -1,0 +1,4 @@
+_RR_TRACE_DIR=$(pwd)/tmp
+rr
+record
+-n
