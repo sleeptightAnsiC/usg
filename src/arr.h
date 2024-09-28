@@ -39,6 +39,7 @@
 
 #define arr_push_back_uninitialized(ARR) \
 	do { \
+		dbg_assert((ARR)._cap >= (ARR)._len); \
 		if ((ARR)._cap == (ARR)._len) { \
 			(ARR)._cap *= 2; \
 			_arr_realloc(ARR); \
