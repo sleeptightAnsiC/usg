@@ -49,7 +49,7 @@
 #define arr_push_back(ARR, VAL) \
 	do { \
 		arr_push_back_uninitialized(ARR); \
-		(ARR)._data[(ARR)._len - 1] = (VAL); \
+		arr_back(ARR) = (VAL); \
 	} while(0) \
 
 #define arr_pop_back(ARR) \
@@ -68,35 +68,26 @@
 		_arr_realloc(ARR); \
 	} while(0) \
 
-#define arr_front_val(ARR) \
+#define arr_front(ARR) \
 	((ARR)._data[0]) \
 
-#define arr_front_ref(ARR) \
-	((ARR)._data + 0) \
-
-#define arr_back_val(ARR) \
+#define arr_back(ARR) \
 	((ARR)._data[(ARR)._len - 1]) \
 
-#define arr_back_ref(ARR) \
-	((ARR)._data + (ARR)._len - 1) \
-
-#define arr_at_val(ARR, NUM) \
+#define arr_at(ARR, NUM) \
 	((ARR)._data[(NUM)]) \
-
-#define arr_at_ref(ARR, NUM) \
-	((ARR)._data + (NUM)) \
 
 #define arr_size(ARR) \
 	((ARR)._len) \
 
 
-#define _arr_data_size(ARR) \
+#define arr_data_size(ARR) \
 	(sizeof((ARR)._data[0]) * (size_t)((ARR)._cap)) \
 
 #define _arr_realloc(ARR) \
 	do { \
 		dbg_assert((ARR)._cap > 0); \
-		const size_t _size = _arr_data_size(ARR); \
+		const size_t _size = arr_data_size(ARR); \
 		(ARR)._data = realloc((ARR)._data, _size); \
 		dbg_assert((ARR)._data); \
 	} while(0) \
@@ -104,7 +95,7 @@
 #define _arr_malloc(ARR) \
 	do { \
 		dbg_assert((ARR)._cap > 0); \
-		const size_t _size = _arr_data_size(ARR); \
+		const size_t _size = arr_data_size(ARR); \
 		(ARR)._data = malloc(_size); \
 		dbg_assert((ARR)._data); \
 	} while(0) \

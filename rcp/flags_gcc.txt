@@ -60,3 +60,5 @@
 -Wno-error=useless-cast
 -Wno-error=missing-prototypes
 -Wno-error=unused-parameter
+-Wno-error=unused-variable
+-Wno-error=unused-function

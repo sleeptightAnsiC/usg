@@ -1,20 +1,23 @@
-
-#include "stdint.h"
-#include "stdbool.h"
-#include "./arr.h"
-
 #ifndef SOE_H
 #define SOE_H
 
+#include "stdint.h"
+#include "stdbool.h"
+
+
+// NOTE: calculates prames based on Sieve of Eratosthenes algorythm
 // https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
 
-// TODO: it is possible to decrease MEM usage 16x times:
-// - skip every even number (2x)
-// - bool uses 8bit, while we only need one (8x)
-// However, I'm not sure how much this would decrease mem access speed.
-ARR_STRUCT(SoeCache, bool, uint64_t);
+#define SOE_OPTIMIZE_MEM
 
-struct SoeCache soe_populate(uint64_t max);
+struct SoeCache {
+	uint8_t *_data;
+	uint64_t _len;
+	uint64_t _cap;
+};
+
+struct SoeCache soe_init(uint64_t max);
+void soe_deinit(const struct SoeCache cache);
 bool soe_is_prime(const struct SoeCache cache, uint64_t num);
 
 #endif  // SOE_H
