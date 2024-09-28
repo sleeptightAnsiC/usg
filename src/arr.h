@@ -3,7 +3,6 @@
 #define ARR_H
 
 #include <stdlib.h>  // malloc free realloc NULL size_t
-#include <string.h>  // memset
 #include "./dbg.h"
 
 
@@ -15,13 +14,13 @@
 	} \
 
 
-#define arr_init_memset(ARR, NUM, VAL) \
+#define arr_init_null(ARR, NUM) \
 	do { \
+		dbg_assert((NUM) > 0); \
 		(ARR)._len = (NUM); \
 		(ARR)._cap = (NUM); \
-		_arr_malloc(ARR); \
-		const size_t _size = _arr_data_size(ARR); \
-		(void)memset((ARR)._data, VAL, _size); \
+		(ARR)._data = calloc((size_t)((ARR)._cap), sizeof((ARR)._data[0])); \
+		dbg_assert((ARR)._data != NULL); \
 	} while(0) \
 
 #define arr_init_cap(ARR, CAP) \

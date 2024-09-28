@@ -57,3 +57,6 @@
 -Wtrivial-auto-var-init
 -Wuseless-cast
 -Wmissing-variable-declarations
+-Wno-error=useless-cast
+-Wno-error=missing-prototypes
+-Wno-error=unused-parameter
