@@ -11,6 +11,29 @@ static inline void _soe_composite_set(struct SoeCache cache, uint64_t num);
 static inline bool _soe_is_composite(struct SoeCache cache, uint64_t num);
 
 
+void
+soe_deinit(const struct SoeCache cache)
+{
+	DBG_CODE {
+		const size_t mem = sizeof(cache._data[0]) * cache._max;
+		const double fmt = (double)(mem) / 1024 / 1024 ;
+		fprintf(stderr, "[soe] Total cache allocation: %.1f MiB \n", fmt);
+	}
+	free(cache._data);
+}
+
+bool
+soe_is_prime(const struct SoeCache cache, uint64_t num)
+{
+	dbg_assert(num > 0);
+#	ifdef SOE_OPTIMIZED_MEM
+		return (num == 2) || ((num % 2 != 0) && !_soe_is_composite(cache, num));
+#	else
+		return !_soe_is_composite(cache, num);
+#	endif
+	dbg_unreachable();
+}
+
 static inline void
 _soe_composite_set(struct SoeCache cache, uint64_t num)
 {
@@ -52,54 +75,30 @@ soe_init(uint64_t max)
 {
 	dbg_assert(max >= 1);
 	dbg_assert(max <= UINT64_MAX - 1);
-	struct SoeCache out;
+	struct SoeCache cache;
 	max += 1;
 #	ifdef SOE_OPTIMIZED_MEM
-		out._max = max / 16;
-		out._data = calloc((size_t)(out._max), sizeof(out._data[0]));
-		dbg_assert(out._data != NULL);
-		_soe_composite_set(out, 1);
+		cache._max = max / 16;
+		cache._data = calloc((size_t)(cache._max), sizeof(cache._data[0]));
+		dbg_assert(cache._data != NULL);
+		_soe_composite_set(cache, 1);
 		for (uint64_t i = 3; (i * i) < max; i += 2) {
-			if (_soe_is_composite(out, i))
+			if (_soe_is_composite(cache, i))
 				continue;
 			for (uint64_t p = i * 3; p < max; p += i * 2)
-				_soe_composite_set(out, p);
+				_soe_composite_set(cache, p);
 		}
 #	else
-		out._max = max;
-		out._data = calloc((size_t)(out._max), sizeof(out._data[0]));
-		_soe_composite_set(out, 1);
+		cache._max = max;
+		cache._data = calloc((size_t)(cache._max), sizeof(cache._data[0]));
+		_soe_composite_set(cache, 1);
 		for (uint64_t i = 2; (i * i) < max; ++i) {
-			if (_soe_is_composite(out, i))
+			if (_soe_is_composite(cache, i))
 				continue;
 			for (uint64_t p = i * 2; p < max; p += i)
-				_soe_composite_set(out, p);
+				_soe_composite_set(cache, p);
 		}
 #	endif
-		return out;
-}
-
-void
-soe_deinit(const struct SoeCache cache)
-{
-	DBG_CODE {
-		const size_t mem = sizeof(cache._data[0]) * cache._max;
-		const double fmt = (double)(mem) / 1024 / 1024 ;
-		fprintf(stderr, "[soe] Total cache allocation: %.1f MiB \n", fmt);
-	}
-	free(cache._data);
-}
-
-bool
-soe_is_prime(const struct SoeCache cache, uint64_t num)
-{
-	bool out;
-	dbg_assert(num > 0);
-#	ifdef SOE_OPTIMIZED_MEM
-		out = (num == 2) || ((num % 2 != 0) && !_soe_is_composite(cache, num));
-#	else
-		out = !_soe_is_composite(cache, num);
-#	endif
-	return out;
+		return cache;
 }
 
