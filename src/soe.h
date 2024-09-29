@@ -8,12 +8,10 @@
 // NOTE: calculates prames based on Sieve of Eratosthenes algorythm
 // https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
 
-#define SOE_OPTIMIZED_MEM
 
 struct SoeCache {
+	uint64_t _max;
 	uint8_t *_data;
-	uint64_t _len;
-	uint64_t _cap;
 };
 
 struct SoeCache soe_init(uint64_t max);

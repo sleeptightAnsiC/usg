@@ -7,9 +7,9 @@
 int
 main(void)
 {
-	// const uint64_t max = 1080 * 1080;
+	const uint64_t max = 1080 * 1080;
 	// const uint64_t max = 1920 * 1080 * 1000;
-	const uint64_t max = (UINT64_MAX - 1) / 1000000000;
+	// const uint64_t max = (UINT64_MAX - 1) / 1000000000;
 	const struct SoeCache cache = soe_init(max);
 	for (uint64_t i = 1; i <= 40; ++i)
 		(void)soe_is_prime(cache, i);
