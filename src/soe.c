@@ -5,10 +5,11 @@
 #include "./dbg.h"
 
 
-// #define SOE_OPTIMIZED_MEM
+#define SOE_OPTIMIZED_MEM
 
 static inline void _soe_composite_set(struct SoeCache cache, uint64_t num);
 static inline bool _soe_is_composite(struct SoeCache cache, uint64_t num);
+
 
 static inline void
 _soe_composite_set(struct SoeCache cache, uint64_t num)
@@ -99,10 +100,6 @@ soe_is_prime(const struct SoeCache cache, uint64_t num)
 #	else
 		out = !_soe_is_composite(cache, num);
 #	endif
-	DBG_CODE {
-		const char *kind = out ? "PRIME" : "composite";
-		fprintf(stderr, "[soe] %lu is a %s number\n", num, kind);
-	}
 	return out;
 }
 
