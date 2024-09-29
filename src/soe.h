@@ -8,7 +8,7 @@
 // NOTE: calculates prames based on Sieve of Eratosthenes algorythm
 // https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
 
-#define SOE_OPTIMIZE_MEM
+#define SOE_OPTIMIZED_MEM
 
 struct SoeCache {
 	uint8_t *_data;

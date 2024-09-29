@@ -40,7 +40,7 @@ soe_init(uint64_t max)
 	dbg_assert(max <= UINT64_MAX - 1);
 	struct SoeCache out;
 	max += 1;
-#ifdef SOE_OPTIMIZE_MEM
+#ifdef SOE_OPTIMIZED_MEM
 	arr_init_null(out, max / 16);
 	_soe_composite_set(out, 1);
 	for (uint64_t i = 3; (i * i) < max; i += 2) {
@@ -79,16 +79,9 @@ bool
 soe_is_prime(const struct SoeCache cache, uint64_t num)
 {
 	bool out;
-	dbg_assert(num >= 1);
-#	ifdef SOE_OPTIMIZE_MEM
-		if (num == 1)
-			out = false;
-		else if (num == 2)
-			out = true;
-		else if (num % 2 == 0)
-			out = false;
-		else
-			out = !_soe_is_composite(cache, num);
+	dbg_assert(num > 0);
+#	ifdef SOE_OPTIMIZED_MEM
+		out = (num == 2) || ((num % 2 != 0) && !_soe_is_composite(cache, num));
 #	else
 		dbg_assert(num < arr_size(cache));
 		out = !arr_at(cache, num);
@@ -99,3 +92,4 @@ soe_is_prime(const struct SoeCache cache, uint64_t num)
 	}
 	return out;
 }
+
