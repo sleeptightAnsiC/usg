@@ -17,7 +17,7 @@ soe_deinit(const struct SoeCache cache)
 	DBG_CODE {
 		const size_t mem = sizeof(cache._data[0]) * cache._max;
 		const double fmt = (double)(mem) / 1024 / 1024 ;
-		fprintf(stderr, "[soe] Total cache allocation: %.1f MiB \n", fmt);
+		dbg_log("Total cache allocation: %.1f MiB", fmt);
 	}
 	free(cache._data);
 }
@@ -55,6 +55,9 @@ static inline bool
 _soe_is_composite(struct SoeCache cache, uint64_t num)
 {
 #	ifdef SOE_OPTIMIZED_MEM
+		// NOTE: (8 * 2)
+		// because every even number is skipped
+		// and because bits are stored inside of uint8_t
 		dbg_assert(num <= cache._max * 8 * 2);
 		dbg_assert(num % 2 != 0);
 		if (num % 2 == 0)
@@ -91,6 +94,7 @@ soe_init(uint64_t max)
 #	else
 		cache._max = max;
 		cache._data = calloc((size_t)(cache._max), sizeof(cache._data[0]));
+		dbg_assert(cache._data != NULL);
 		_soe_composite_set(cache, 1);
 		for (uint64_t i = 2; (i * i) < max; ++i) {
 			if (_soe_is_composite(cache, i))
@@ -99,6 +103,6 @@ soe_init(uint64_t max)
 				_soe_composite_set(cache, p);
 		}
 #	endif
-		return cache;
+	return cache;
 }
 

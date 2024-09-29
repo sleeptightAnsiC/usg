@@ -2,6 +2,9 @@
 #define DBG_H
 
 #include <assert.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
 
 
 // TODO: disable assertions and debug-only macros in shipping builds
@@ -17,12 +20,31 @@
 	struct _DBG_UNIQUE_NAME(STATIC_ASSERTION_FAILED) \
 	{ char STATIC_ASSERTION_FAILED[(EXPRESSION) ? 1 : -1]; } \
 
+#define _dbg_log(PREFIX, ...) \
+	do { \
+		/* fprintf(stderr, "[%s:%d:%s] %s: ", __FILE__, __LINE__, __func__, PREFIX); */ \
+		fprintf(stderr, "[%s] %s: ", __func__, PREFIX); \
+		fprintf(stderr, __VA_ARGS__); \
+		fprintf(stderr, "\n"); \
+	} while (0) \
+
+#define dbg_log(...) \
+	_dbg_log("log", __VA_ARGS__) \
+
+#define dbg_error(...) \
+	_dbg_log("ERROR", __VA_ARGS__) \
+
 #define dbg_assert(COND) \
-	assert(COND) \
+	do{ \
+		if (errno != 0) \
+			dbg_error("%s (errno)", strerror(errno)); \
+		assert(COND); \
+	} while (0) \
 
 #define dbg_unreachable() \
 	do{ \
-		assert("This code should never be reached!" && 0); \
+		dbg_error("This code should never be reached!"); \
+		assert(0); \
 	} while (0) \
 
 
