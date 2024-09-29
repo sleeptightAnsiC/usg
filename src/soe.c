@@ -11,7 +11,7 @@ void _soe_composite_set(struct SoeCache cache, uint64_t num)
 		return;
 	const uint64_t idx = num / 16;
 	const uint8_t current = arr_at(cache, idx);
-	const uint8_t mask = (uint8_t)(1 << (num % 8));
+	const uint8_t mask = (uint8_t)(1 << ((num / 2) % 8));
 	const uint8_t new = current | mask;
 	arr_at(cache, idx) = new;
 }
@@ -23,7 +23,7 @@ bool _soe_is_composite(struct SoeCache cache, uint64_t num)
 		return true;
 	const uint64_t idx = num / 16;
 	const uint8_t whole = arr_at(cache, idx);
-	const uint8_t actual = (whole >> ((num) % 8)) & 1;
+	const uint8_t actual = (whole >> ((num / 2) % 8)) & 1;
 	return actual;
 }
 
@@ -40,7 +40,7 @@ soe_init(uint64_t max)
 	for (uint64_t i = 3; (i * i) < max; i += 2) {
 		if (_soe_is_composite(out, i))
 			continue;
-		for (uint64_t p = i * 2; p < max; p += i)
+		for (uint64_t p = i * 3; p < max; p += i * 2)
 			_soe_composite_set(out, p);
 	}
 #else
