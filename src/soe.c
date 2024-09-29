@@ -4,26 +4,32 @@
 #include <stdio.h>
 
 
-void _soe_composite_set(struct SoeCache cache, uint64_t num)
+static inline void _soe_composite_set(struct SoeCache cache, uint64_t num);
+static inline bool _soe_is_composite(struct SoeCache cache, uint64_t num);
+
+static inline void
+_soe_composite_set(struct SoeCache cache, uint64_t num)
 {
-	dbg_assert(num <= arr_size(cache) * 16);
-	if (num % 2 == 0)
-		return;
-	const uint64_t idx = num / 16;
-	const uint8_t current = arr_at(cache, idx);
+	dbg_assert(num <= arr_size(cache) * (8 * 2));
+	dbg_assert(num % 2 != 0);
+	const uint64_t idx = num / (8 * 2);
+	const uint8_t whole = arr_at(cache, idx);
 	const uint8_t mask = (uint8_t)(1 << ((num / 2) % 8));
-	const uint8_t new = current | mask;
+	const uint8_t new = whole | mask;
 	arr_at(cache, idx) = new;
 }
 
-bool _soe_is_composite(struct SoeCache cache, uint64_t num)
+static inline bool
+_soe_is_composite(struct SoeCache cache, uint64_t num)
 {
-	dbg_assert(num <= arr_size(cache) * 16);
+	dbg_assert(num <= arr_size(cache) * (8 * 2));
+	dbg_assert(num % 2 != 0);
 	if (num % 2 == 0)
 		return true;
-	const uint64_t idx = num / 16;
+	const uint64_t idx = num / (8 * 2);
 	const uint8_t whole = arr_at(cache, idx);
-	const uint8_t actual = (whole >> ((num / 2) % 8)) & 1;
+	const uint8_t mask = (uint8_t)(whole >> ((num / 2) % 8));
+	const uint8_t actual = 1 & mask;
 	return actual;
 }
 
@@ -75,7 +81,14 @@ soe_is_prime(const struct SoeCache cache, uint64_t num)
 	bool out;
 	dbg_assert(num >= 1);
 #	ifdef SOE_OPTIMIZE_MEM
-		out = !_soe_is_composite(cache, num);
+		if (num == 1)
+			out = false;
+		else if (num == 2)
+			out = true;
+		else if (num % 2 == 0)
+			out = false;
+		else
+			out = !_soe_is_composite(cache, num);
 #	else
 		dbg_assert(num < arr_size(cache));
 		out = !arr_at(cache, num);
