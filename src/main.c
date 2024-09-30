@@ -24,6 +24,9 @@ main(void)
 	(void)spr_coords_to_val(1,1);
 	(void)spr_coords_to_val(-1,-1);
 	(void)spr_coords_to_val(2,-3);
+	const int64_t x = spr_screen_to_coord_x(0, 3);
+	const int64_t y = spr_screen_to_coord_y(1, 3);
+	(void)spr_coords_to_val(x,y);
 	return EXIT_SUCCESS;
 }
 

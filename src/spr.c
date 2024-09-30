@@ -21,16 +21,36 @@ spr_coords_to_val(int64_t x, int64_t y)
 	const int64_t yabs = _spr_abs(y);
 	const int64_t layer = _spr_max(xabs, yabs);
 	const int64_t max = _spr_pow2(layer * 2 + 1);
-	int64_t out;
+	int64_t val;
 	if (y == -layer) {
-		out = max - (layer - x);
+		val = max - (layer - x);
 	} else if (x == -layer) {
-		out = max - (2 * layer) - (layer + y);
+		val = max - (2 * layer) - (layer + y);
 	} else if (y == layer) {
-		out = max - (4 * layer) - (layer + x);
+		val = max - (4 * layer) - (layer + x);
 	} else {
-		out = max - (6 * layer) - (layer - y);
+		val = max - (6 * layer) - (layer - y);
 	}
-	dbg_log("(%ld:%ld) = %ld", x, y, out);
-	return (uint64_t)out;
+	dbg_log("(%ld:%ld) = %ld", x, y, val);
+	return (uint64_t)val;
 }
+
+int64_t
+spr_screen_to_coord_x(uint64_t x, uint64_t wh)
+{
+	dbg_assert(wh % 2 != 0);
+	const uint64_t half = wh / 2;
+	const int64_t coord = (int64_t)(x - half);
+	return coord;
+}
+
+int64_t
+spr_screen_to_coord_y(uint64_t y, uint64_t wh)
+{
+	dbg_assert(wh % 2 != 0);
+	const uint64_t half = wh / 2;
+	const int64_t coord = (int64_t)(half - y);
+	return coord;
+}
+
+
