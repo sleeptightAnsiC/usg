@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 
+// Utilities for accessing values at the Spiral
 
 uint64_t spr_coords_to_val(int64_t x, int64_t y);
 int64_t spr_screen_to_coord_x(uint64_t x, uint64_t wh);

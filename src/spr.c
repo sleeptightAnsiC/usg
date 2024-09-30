@@ -31,7 +31,7 @@ spr_coords_to_val(int64_t x, int64_t y)
 	} else {
 		val = max - (6 * layer) - (layer - y);
 	}
-	dbg_log("(%ld:%ld) = %ld", x, y, val);
+	// dbg_log("(%ld:%ld) = %ld", x, y, val);
 	return (uint64_t)val;
 }
 
