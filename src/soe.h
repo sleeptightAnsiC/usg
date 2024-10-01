@@ -1,11 +1,11 @@
 #ifndef SOE_H
 #define SOE_H
 
-#include "stdint.h"
-#include "stdbool.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 
-// NOTE: calculates prames based on Sieve of Eratosthenes algorythm
+// NOTE: calculates primes based on Sieve of Eratosthenes algorythm
 // https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
 
 
