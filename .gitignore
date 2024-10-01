@@ -15,4 +15,5 @@ perf.*
 *.pdb
 *.wasm
 *.js
+*.ppm
 executable
