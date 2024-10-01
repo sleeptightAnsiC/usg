@@ -10,12 +10,12 @@ int
 main(void)
 {
 	// FIXME: small max value is causing a crash for some reason
-	const uint64_t max = 1080 * 1080;
+	// const uint64_t max = 1080 * 1080;
 	// const uint64_t max = 1920 * 1080 * 1000;
 	// const uint64_t max = (UINT64_MAX - 1) / 1000000000;
 	// const uint64_t max = (UINT64_MAX - 1);
 	const uint64_t wh = 21;
-	// const uint64_t max = wh * wh - 1;
+	const uint64_t max = wh * wh;
 	const struct SoeCache cache = soe_init(max);
 	// (void)soe_is_prime(cache, max);
 	// dbg_assert(soe_is_prime(cache, 2111) == true);

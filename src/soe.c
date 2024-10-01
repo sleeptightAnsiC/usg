@@ -81,7 +81,7 @@ soe_init(uint64_t max)
 	struct SoeCache cache;
 	max += 1;
 #	ifdef SOE_OPTIMIZED_MEM
-		cache._max = max / 16;
+		cache._max = (max / 16) + 1;
 		cache._data = calloc((size_t)(cache._max), sizeof(cache._data[0]));
 		dbg_assert(cache._data != NULL);
 		_soe_composite_set(cache, 1);
