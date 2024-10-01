@@ -52,9 +52,10 @@ void img_write(struct ImgContext *ctx, struct ImgPixel px)
 {
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_height * ctx->_width > ctx->_pixels);
-	ctx->_pixels += 1;
+	DBG_CODE { ctx->_pixels += 1; }
 	switch (ctx->_type) {
 	case IMG_TYPE_PPM:
+		// FIXME: TOOOOO SLOW...
 		_img_fprintf(
 			ctx->_file,
 			"%"PRIu8" %"PRIu8" %"PRIu8"\n",

@@ -6,3 +6,4 @@
 - https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
 - https://en.wikipedia.org/wiki/BMP_file_format
 - https://en.wikipedia.org/wiki/Netpbm
+- https://gist.github.com/LingDong-/87f8f53caf062fa2f19f77186a96dde1

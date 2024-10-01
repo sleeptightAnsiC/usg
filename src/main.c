@@ -10,7 +10,7 @@
 int
 main(void)
 {
-	// const uint32_t wh = 201;
+	// const uint32_t wh = 101;
 	const uint32_t wh = 4001;
 	const uint64_t max = wh * wh;
 	const struct SoeCache cache = soe_init(max);

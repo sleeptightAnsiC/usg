@@ -60,8 +60,6 @@ _soe_is_composite(struct SoeCache cache, uint64_t num)
 		// and because bits are stored inside of uint8_t
 		dbg_assert(num <= cache._max * 8 * 2);
 		dbg_assert(num % 2 != 0);
-		if (num % 2 == 0)
-			return true;
 		const uint64_t idx = num / (8 * 2);
 		const uint8_t whole = cache._data[idx];
 		const uint8_t mask = (uint8_t)(whole >> ((num / 2) % 8));

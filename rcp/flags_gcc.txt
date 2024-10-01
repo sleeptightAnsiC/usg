@@ -62,3 +62,4 @@
 -Wno-error=unused-parameter
 -Wno-error=unused-variable
 -Wno-error=unused-function
+-Wno-error=unused-value
