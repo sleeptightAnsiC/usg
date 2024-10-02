@@ -68,6 +68,7 @@
 		assert(COND); \
 	} while (0)
 #else
+// FIXME: COND might be a function call so this should be just discarded
 # define dbg_assert(COND) \
 	(void)(COND)
 #endif

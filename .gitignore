@@ -16,4 +16,5 @@ perf.*
 *.wasm
 *.js
 *.ppm
+*.bmp
 executable
