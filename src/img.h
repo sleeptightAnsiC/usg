@@ -8,6 +8,7 @@
 enum ImgType {
 	IMG_TYPE_INVALID,
 	IMG_TYPE_PPM,
+	// FIXME: BMP image is flipped
 	IMG_TYPE_BMP,
 };
 
