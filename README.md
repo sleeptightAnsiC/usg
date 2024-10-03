@@ -1,6 +1,6 @@
 # usg
 Tiny program for generating Ulam Spiral and writing it as simple image file. \
-Currently supporting uncompressed .bmp and .ppn files \
+Currently supporting uncompressed .bmp and .ppm files \
 (but .bmp can be easily converted and compressed by external tools) \
 This project was created in order to explore Prine number generation algorithms \
 and in order to find a simple and portable implementation for writing image to the disc.
