@@ -1,20 +1,26 @@
-### usg
-Tiny program for generating Ulam Spiral and writing it as image file.
+# usg
+Tiny program for generating Ulam Spiral and writing it as simple image file. \
+Currently supporting uncompressed .bmp and .ppn files \
+(but .bmp can be easily converted and compressed by external tools) \
+This project was created in order to explore Prine number generation algorithms \
+and in order to find a simple and portable implementation for writing image to the disc.
 
-### BUILDING
-Either:
-* with GNU/make on POSIX (Linux, MacOSX, MinGW, etc):
+![spiral](https://github.com/user-attachments/assets/5c51f550-e331-4d55-a561-6ba73e688214)
+
+
+# BUILDING
+Either, with GNU/make on POSIX (Linux, MacOSX, MinGW, etc):
 ```sh
 $ git clone https://github.com/sleeptightAnsiC/usg.git
 $ cd usg
 $ make
 ```
-* with any C99-capable compiler:
+OR, with any C99-capable compiler:
 ```sh
 $ cc src/*.c
 ```
 
-### REFERENCES
+# REFERENCES
 - https://en.wikipedia.org/wiki/Prime_number
 - https://en.wikipedia.org/wiki/List_of_prime_numbers
 - https://en.wikipedia.org/wiki/Generation_of_primes
@@ -22,6 +28,6 @@ $ cc src/*.c
 - https://en.wikipedia.org/wiki/BMP_file_format
 - https://en.wikipedia.org/wiki/Netpbm
 
-### LICENSE
+# LICENSE
 Copyright holder: https://github.com/sleeptightAnsiC \
 Code under this repository is licensed under permissive MIT/X license
