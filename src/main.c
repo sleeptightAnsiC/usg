@@ -14,8 +14,8 @@ main(void)
 	// const uint32_t WH = 4001;
 	const uint64_t MAX = WH * WH;
 	const struct SoeCache cache = soe_init(MAX);
-	// struct ImgContext image = img_init("test.ppm", WH, WH, IMG_TYPE_PPM);
-	struct ImgContext image = img_init("test.bmp", WH, WH, IMG_TYPE_BMP);
+	// struct ImgContext image = img_init("spiral.ppm", WH, WH, IMG_TYPE_PPM);
+	struct ImgContext image = img_init("spiral.bmp", WH, WH, IMG_TYPE_BMP);
 	for (uint64_t i = 0; i < WH; ++i) {
 		for (uint64_t j = 0; j < WH; ++j) {
 			const int64_t x = spr_screen_to_coord_x(j, WH);

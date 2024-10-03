@@ -5,8 +5,6 @@
 #include "./dbg.h"
 
 
-#define SOE_OPTIMIZED_MEM
-
 static inline void _soe_composite_set(struct SoeCache cache, uint64_t num);
 static inline bool _soe_is_composite(struct SoeCache cache, uint64_t num);
 

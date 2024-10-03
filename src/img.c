@@ -8,7 +8,6 @@
 
 DBG_STATIC_ASSERT(UINT8_MAX == 255);
 
-// fprintf with additional return check
 #define _img_fprintf(...) \
 	do { \
 		const int _result = fprintf(__VA_ARGS__); \
@@ -102,9 +101,9 @@ img_write(struct ImgContext *ctx, struct ImgPixel px)
 	DBG_CODE {
 		ctx->_pixels += 1;
 	}
+	// FIXME: TOOOOO SLOW... (maybe change how buffering works?)
 	switch (ctx->_type) {
 	case IMG_TYPE_PPM:
-		// FIXME: TOOOOO SLOW...
 		_img_fprintf(
 			ctx->_file,
 			"%"PRIu8" %"PRIu8" %"PRIu8"\n",

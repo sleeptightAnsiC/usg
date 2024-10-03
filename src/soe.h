@@ -4,10 +4,19 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/* SOE
+ * Calculates primes based on Sieve of Eratosthenes
+ * Note that this algorithm requires caching
+ * and so it allocates memory on the heap
+ * https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
+ *
+ * SOE_OPTIMIZED_MEM
+ *	This flag changes how cache stores the values.
+ *	Defining it results in 16x less memory usage,
+ *	but accessing cache becomes slower.
+ */
 
-// NOTE: calculates primes based on Sieve of Eratosthenes algorythm
-// https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
-
+// #define SOE_OPTIMIZED_MEM
 
 struct SoeCache {
 	uint64_t _max;

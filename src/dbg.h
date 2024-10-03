@@ -6,10 +6,14 @@
 #include <stdio.h>
 #include <errno.h>
 
+/* DBG
+ * Debugging utilities
+ *
+ * DBG_DISABLED
+ *	Defining this macro strips any debug functionality
+ */
 
-// defining this macro strips any debug functionality
 // #define DBG_DISABLED
-
 
 #ifndef DBG_DISABLED
 # define DBG_CODE if (0); else
