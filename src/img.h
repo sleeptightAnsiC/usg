@@ -28,7 +28,7 @@
  *	It uses 14 byte bmp header followed by 12 byte DIB BITMAPCOREHEADER header,
  *	with signed integers used for storing width and height.
  *	https://en.wikipedia.org/wiki/BMP_file_format
- *
+ *	https://web.archive.org/web/20080912171714/http://www.fortunecity.com/skyscraper/windows/364/bmpffrmt.html
  */
 
 enum ImgType {

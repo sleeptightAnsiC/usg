@@ -50,7 +50,7 @@ img_init(const char *name, uint32_t w, uint32_t h, enum ImgType t)
 		break;
 	} case IMG_TYPE_BMP: {
 		const uint8_t HDRSIZE = 14; // size of primary .bmp header
-		const uint8_t DIBSIZE = 12; // size of DIB, secondary .bmp header
+		const uint8_t DIBSIZE = 40; // size of DIB, secondary .bmp header
 		// primary header - BMP Identifier ("BM") - 2 bytes
 		_IMG_FDUMP(uint8_t, 'B', file);
 		_IMG_FDUMP(uint8_t, 'M', file);
@@ -61,19 +61,32 @@ img_init(const char *name, uint32_t w, uint32_t h, enum ImgType t)
 		_IMG_FDUMP(uint32_t, 0, file);
 		// primary header - Starting adress of the pixel array - 4 bytes
 		_IMG_FDUMP(uint32_t, HDRSIZE + DIBSIZE, file);
-		// DIB BITMAPCOREHEADER - The size of DIB header in bytes (12) - 4 bytes
+
+		// DIB BITMAPCOREHEADER - The size of DIB header in bytes - 4 bytes
 		_IMG_FDUMP(uint32_t, DIBSIZE, file);
-		// DIB BITMAPCOREHEADER - Bitmap width in pixels - 2 bytes
-		dbg_assert(w <= INT16_MAX);
-		_IMG_FDUMP(int16_t, w, file);
-		// DIB BITMAPCOREHEADER - Bitmap height in pixels - 2 bytes
+		// DIB BITMAPCOREHEADER - Bitmap width in pixels - 4 bytes
+		dbg_assert(w <= INT32_MAX);
+		_IMG_FDUMP(int32_t, w, file);
+		// DIB BITMAPCOREHEADER - Bitmap height in pixels - 4 bytes
 		// WARN: height is negative, because image is stored from top to bottom
-		dbg_assert(h <= INT16_MAX);
-		_IMG_FDUMP(int16_t, -h, file);
+		dbg_assert(h <= INT32_MAX);
+		_IMG_FDUMP(int32_t, -(int32_t)(h), file);
 		// DIB BITMAPCOREHEADER - Number of color planes (always 1) - 2 bytes
 		_IMG_FDUMP(uint16_t, 1, file);
 		// DIB BITMAPCOREHEADER - Number of bits per pixel (8 bits * 4 channels) - 2 bytes
 		_IMG_FDUMP(uint16_t, 32, file);
+		// DIB BITMAPCOREHEADER - Compression method (0 for none) - 4 bytes
+		_IMG_FDUMP(uint32_t, 0, file);
+		// DIB BITMAPCOREHEADER - Image size (0 because no compression method is used) - 4 bytes
+		_IMG_FDUMP(uint32_t, 0, file);
+		// DIB BITMAPCOREHEADER - Horizontal resolution (pixel per metre) - 4 bytes
+		_IMG_FDUMP(int32_t, 1, file);
+		// DIB BITMAPCOREHEADER - Vertical resolution (pixel per metre) - 4 bytes
+		_IMG_FDUMP(int32_t, 1, file);
+		// DIB BITMAPCOREHEADER - Number of colors in the pallet (0 for default) - 4 bytes
+		_IMG_FDUMP(uint32_t, 0, file);
+		// DIB BITMAPCOREHEADER - Number of colors used (0 if each pixel is important) - 4 bytes
+		_IMG_FDUMP(uint32_t, 0, file);
 		break;
 	} case IMG_TYPE_INVALID: {
 	} default: {
@@ -104,6 +117,7 @@ img_write(struct ImgContext *ctx, struct ImgPixel px)
 	}
 	switch (ctx->_type) {
 	case IMG_TYPE_PPM:
+		(void)px.a;
 		// FIXME: TOOOOO SLOW...
 		_img_fprintf(
 			ctx->_file,
@@ -111,7 +125,6 @@ img_write(struct ImgContext *ctx, struct ImgPixel px)
 			px.r,
 			px.g,
 			px.b);
-		(void)px.a;
 		break;
 	case IMG_TYPE_BMP:
 		_IMG_FDUMP(uint8_t, px.r, ctx->_file);
