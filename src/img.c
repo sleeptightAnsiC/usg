@@ -69,7 +69,7 @@ img_init(const char *name, uint32_t w, uint32_t h, enum ImgType t)
 		// DIB BITMAPCOREHEADER - Bitmap height in pixels - 2 bytes
 		// WARN: height is negative, because image is stored from top to bottom
 		dbg_assert(h <= INT16_MAX);
-		_IMG_FDUMP(int16_t, -h, file);
+		_IMG_FDUMP(int16_t, -(int16_t)(h), file);
 		// DIB BITMAPCOREHEADER - Number of color planes (always 1) - 2 bytes
 		_IMG_FDUMP(uint16_t, 1, file);
 		// DIB BITMAPCOREHEADER - Number of bits per pixel (8 bits * 4 channels) - 2 bytes
