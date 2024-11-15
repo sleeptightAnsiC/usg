@@ -1,9 +1,9 @@
 
-#ifndef IMG_H
-#define IMG_H
+#ifndef _IMG_H
+#define _IMG_H
 
-#include <stdint.h>
 #include <stdio.h>
+#include "./typ.h"
 
 /* IMG
  *
@@ -31,29 +31,29 @@
  *
  */
 
-enum ImgType {
+enum img_type {
 	IMG_TYPE_INVALID,
 	IMG_TYPE_PPM,
 	IMG_TYPE_BMP,
 };
 
-struct ImgPixel {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-	uint8_t a;
+struct img_pixel {
+	u8 r;
+	u8 g;
+	u8 b;
+	u8 a;
 };
 
-struct ImgContext {
-	uint64_t _pixels;
+struct img_context {
+	u64 _pixels;
 	FILE *const _file;
-	const uint32_t _width;
-	const uint32_t _height;
-	const enum ImgType _type;
+	const u32 _width;
+	const u32 _height;
+	const enum img_type _type;
 };
 
-struct ImgContext img_init(const char *name, uint32_t w, uint32_t h, enum ImgType t);
-void img_deinit(struct ImgContext *ctx);
-void img_write(struct ImgContext *ctx, struct ImgPixel px);
+struct img_context img_init(const char *name, u32 w, u32 h, enum img_type t);
+void img_deinit(struct img_context *ctx);
+void img_write(struct img_context *ctx, struct img_pixel px);
 
-#endif  // IMG_H
+#endif  // _IMG_H

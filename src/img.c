@@ -2,7 +2,6 @@
 #include "./img.h"
 #include "./dbg.h"
 #include <inttypes.h>
-#include <stdint.h>
 #include <stdio.h>
 
 
@@ -24,14 +23,14 @@ DBG_STATIC_ASSERT(UINT8_MAX == 255);
 	} while (0) \
 
 
-struct ImgContext
-img_init(const char *name, uint32_t w, uint32_t h, enum ImgType t)
+struct img_context
+img_init(const char *name, u32 w, u32 h, enum img_type t)
 {
 	dbg_log("Opening file: %s", name);
 	FILE *const file = fopen(name , "w");
 	// FIXME: opening the file should have error handling in non-debug builds
 	dbg_assert(file);
-	struct ImgContext ctx = {
+	struct img_context ctx = {
 		._pixels = 0,
 		._file = file,
 		._width = w,
@@ -48,31 +47,31 @@ img_init(const char *name, uint32_t w, uint32_t h, enum ImgType t)
 		_img_fprintf(file, "255\n");
 		break;
 	} case IMG_TYPE_BMP: {
-		const uint8_t HDRSIZE = 14; // size of primary .bmp header
-		const uint8_t DIBSIZE = 12; // size of DIB, secondary .bmp header
+		const u8 HDRSIZE = 14; // size of primary .bmp header
+		const u8 DIBSIZE = 12; // size of DIB, secondary .bmp header
 		// primary header - BMP Identifier ("BM") - 2 bytes
-		_IMG_FDUMP(uint8_t, 'B', file);
-		_IMG_FDUMP(uint8_t, 'M', file);
+		_IMG_FDUMP(u8, 'B', file);
+		_IMG_FDUMP(u8, 'M', file);
 		// primary header - The size of the BMP file in bytes (pixel array + headers) - 4 bytes
-		size_t bmpsize = w * h * sizeof(uint32_t) + HDRSIZE + DIBSIZE;
-		_IMG_FDUMP(uint32_t, bmpsize, file);
+		size_t bmpsize = w * h * sizeof(u32) + HDRSIZE + DIBSIZE;
+		_IMG_FDUMP(u32, bmpsize, file);
 		// primary header - Reserved space (empty in this case, but can be anything) - 2 + 2 bytes
-		_IMG_FDUMP(uint32_t, 0, file);
+		_IMG_FDUMP(u32, 0, file);
 		// primary header - Starting adress of the pixel array - 4 bytes
-		_IMG_FDUMP(uint32_t, HDRSIZE + DIBSIZE, file);
+		_IMG_FDUMP(u32, HDRSIZE + DIBSIZE, file);
 		// DIB BITMAPCOREHEADER - The size of DIB header in bytes (12) - 4 bytes
-		_IMG_FDUMP(uint32_t, DIBSIZE, file);
+		_IMG_FDUMP(u32, DIBSIZE, file);
 		// DIB BITMAPCOREHEADER - Bitmap width in pixels - 2 bytes
 		dbg_assert(w <= INT16_MAX);
-		_IMG_FDUMP(int16_t, w, file);
+		_IMG_FDUMP(i16, w, file);
 		// DIB BITMAPCOREHEADER - Bitmap height in pixels - 2 bytes
 		// WARN: height is negative, because image is stored from top to bottom
 		dbg_assert(h <= INT16_MAX);
-		_IMG_FDUMP(int16_t, -(int16_t)(h), file);
+		_IMG_FDUMP(i16, -(i16)(h), file);
 		// DIB BITMAPCOREHEADER - Number of color planes (always 1) - 2 bytes
-		_IMG_FDUMP(uint16_t, 1, file);
+		_IMG_FDUMP(u16, 1, file);
 		// DIB BITMAPCOREHEADER - Number of bits per pixel (8 bits * 4 channels) - 2 bytes
-		_IMG_FDUMP(uint16_t, 32, file);
+		_IMG_FDUMP(u16, 32, file);
 		break;
 	} case IMG_TYPE_INVALID: {
 	} default: {
@@ -83,7 +82,7 @@ img_init(const char *name, uint32_t w, uint32_t h, enum ImgType t)
 }
 
 void
-img_deinit(struct ImgContext *ctx)
+img_deinit(struct img_context *ctx)
 {
 	dbg_assert(ctx != NULL);
 	const int err = fclose(ctx->_file);
@@ -94,7 +93,7 @@ img_deinit(struct ImgContext *ctx)
 }
 
 void
-img_write(struct ImgContext *ctx, struct ImgPixel px)
+img_write(struct img_context *ctx, struct img_pixel px)
 {
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_height * ctx->_width > ctx->_pixels);
@@ -113,10 +112,10 @@ img_write(struct ImgContext *ctx, struct ImgPixel px)
 		(void)px.a;
 		break;
 	case IMG_TYPE_BMP:
-		_IMG_FDUMP(uint8_t, px.r, ctx->_file);
-		_IMG_FDUMP(uint8_t, px.g, ctx->_file);
-		_IMG_FDUMP(uint8_t, px.b, ctx->_file);
-		_IMG_FDUMP(uint8_t, px.a, ctx->_file);
+		_IMG_FDUMP(u8, px.r, ctx->_file);
+		_IMG_FDUMP(u8, px.g, ctx->_file);
+		_IMG_FDUMP(u8, px.b, ctx->_file);
+		_IMG_FDUMP(u8, px.a, ctx->_file);
 		break;
 	case IMG_TYPE_INVALID:
 	default:

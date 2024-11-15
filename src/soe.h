@@ -1,8 +1,7 @@
-#ifndef SOE_H
-#define SOE_H
+#ifndef _SOE_H
+#define _SOE_H
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "./typ.h"
 
 /* SOE
  * Calculates primes based on Sieve of Eratosthenes
@@ -18,13 +17,13 @@
 
 // #define SOE_OPTIMIZED_MEM
 
-struct SoeCache {
-	uint64_t _max;
-	uint8_t *_data;
+struct soe_cache {
+	u64 _max;
+	u8 *_data;
 };
 
-struct SoeCache soe_init(uint64_t max);
-void soe_deinit(const struct SoeCache cache);
-bool soe_is_prime(const struct SoeCache cache, uint64_t num);
+struct soe_cache soe_init(u64 max);
+void soe_deinit(const struct soe_cache cache);
+b8 soe_is_prime(const struct soe_cache cache, u64 num);
 
-#endif  // SOE_H
+#endif  // _SOE_H

@@ -17,4 +17,5 @@ perf.*
 *.js
 *.ppm
 *.bmp
-executable
+*.png
+usg
