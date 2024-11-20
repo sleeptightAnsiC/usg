@@ -1,8 +1,8 @@
 #include <stdlib.h>
-#include "./dbg.h"
 #include "./soe.h"
 #include "./spr.h"
 #include "./img.h"
+#include "./typ.h"
 
 int
 main(void)

@@ -1,8 +1,12 @@
 
-#include "./img.h"
-#include "./dbg.h"
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include "./img.h"
+#include "./dbg.h"
+#include "./typ.h"
 
 
 DBG_STATIC_ASSERT(UINT8_MAX == 255);
@@ -28,8 +32,10 @@ img_init(const char *name, u32 w, u32 h, enum img_type t)
 {
 	dbg_log("Opening file: %s", name);
 	FILE *const file = fopen(name , "w");
-	// FIXME: opening the file should have error handling in non-debug builds
-	dbg_assert(file);
+	if (file == NULL) {
+		fprintf(stderr, "Unable to open '%s': %s\n", name, strerror(errno));
+		exit(errno);
+	}
 	struct img_context ctx = {
 		._pixels = 0,
 		._file = file,
@@ -86,8 +92,10 @@ img_deinit(struct img_context *ctx)
 {
 	dbg_assert(ctx != NULL);
 	const int err = fclose(ctx->_file);
-	// FIXME: closing the file should have error handling in non-debug builds
-	dbg_assert(err == 0);
+	if (err != 0) {
+		fprintf(stderr, "Unable to close file: %s\n", strerror(errno));
+		exit(errno);
+	}
 	dbg_assert(ctx->_height * ctx->_width == ctx->_pixels);
 	dbg_log("File closed.");
 }
@@ -100,7 +108,6 @@ img_write(struct img_context *ctx, struct img_pixel px)
 	DBG_CODE {
 		ctx->_pixels += 1;
 	}
-	// FIXME: TOOOOO SLOW... (maybe change how buffering works?)
 	switch (ctx->_type) {
 	case IMG_TYPE_PPM:
 		_img_fprintf(
