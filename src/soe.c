@@ -16,7 +16,7 @@ soe_deinit(const struct soe_cache cache)
 	DBG_CODE {
 		const size_t mem = sizeof(cache._data[0]) * cache._max;
 		const double fmt = (double)(mem) / 1024 / 1024 ;
-		dbg_log("Total cache allocation: %.1f MiB", fmt);
+		dbg_log("Total heap size allocation for soe_cash::_data : %.1f MiB", fmt);
 	}
 	free(cache._data);
 }

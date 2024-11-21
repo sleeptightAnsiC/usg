@@ -130,3 +130,38 @@ img_write(struct img_context *ctx, struct img_pixel px)
 	}
 }
 
+b8
+img_pixel_from_arg(struct img_pixel *pix_out, const char *arg)
+{
+	// TODO: perhaps it would be just easier to use strtoumax
+	// with reinterpret cast instead of parsing manually
+	// https://en.cppreference.com/w/c/string/byte/strtoimax
+	// NOTE: after checking strtomax out, I don't like
+	// how it handles the garbage isside of string and reports errors
+	dbg_assert(pix_out != NULL);
+	dbg_assert(arg != NULL);
+	u8 vals[8];
+	for (int i = 0; i < 8; i += 1) {
+		DBG_STATIC_ASSERT('0' < 'A');
+		DBG_STATIC_ASSERT('A' < 'a');
+		if (arg[i] == '\0') return false;
+		if (arg[i] < '0') return false;
+		if (arg[i] > 'f') return false;
+		if (arg[i] >= 'a')
+			vals[i] = (u8)(arg[i] - 'a' + 10);
+		else if (arg[i] >= 'A')
+			vals[i] = (u8)(arg[i] - 'A' + 10);
+		else if (arg[i] >= '0')
+			vals[i] = (u8)(arg[i] - '0');
+		else
+			dbg_unreachable();
+	}
+	if (arg[8] != '\0')
+		return false;
+	pix_out->r = (u8)(vals[0] * 16 + vals[1]);
+	pix_out->g = (u8)(vals[2] * 16 + vals[3]);
+	pix_out->b = (u8)(vals[4] * 16 + vals[5]);
+	pix_out->a = (u8)(vals[6] * 16 + vals[7]);
+	return true;
+}
+

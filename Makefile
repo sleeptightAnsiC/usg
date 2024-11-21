@@ -28,7 +28,8 @@ SANDBOX = $(shell cat $(RCPDIR)/sandbox_gdb.txt)
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_valgrind.txt)
 
 .PHONY: default
-default: run compile_commands.json
+# default: run compile_commands.json
+default: build compile_commands.json
 
 .PHONY: run
 run: build

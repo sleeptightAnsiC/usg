@@ -37,6 +37,8 @@ enum img_type {
 	IMG_TYPE_BMP,
 };
 
+// TODO: perhaps, rename to 'color' since
+// img_color makes more sense that img_pixel
 struct img_pixel {
 	u8 r;
 	u8 g;
@@ -55,5 +57,6 @@ struct img_context {
 struct img_context img_init(const char *name, u32 w, u32 h, enum img_type t);
 void img_deinit(struct img_context *ctx);
 void img_write(struct img_context *ctx, struct img_pixel px);
+b8 img_pixel_from_arg(struct img_pixel *pix_out, const char *arg);
 
 #endif  // _IMG_H
