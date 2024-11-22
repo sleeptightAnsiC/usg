@@ -11,19 +11,25 @@
 
 DBG_STATIC_ASSERT(UINT8_MAX == 255);
 
-#define _img_fprintf(...) \
+#define _IMG_FPRINTF(...) \
 	do { \
-		const int _result = fprintf(__VA_ARGS__); \
-		dbg_assert(_result > 0); \
+		const int __result = fprintf(__VA_ARGS__); \
+		if (__result == 0) { \
+			fprintf(stderr, "Unable to write to the file: %s\n", strerror(errno)); \
+			exit(errno); \
+		} \
 	} while (0) \
 
 // Takes VAL, stores it as TYPE (type coersion/conversion is expected)
 // and writes it to FILE with fwrite. Unlike fwrite, this only takes one value.
 #define _IMG_FDUMP(TYPE, VAL, FILE) \
 	do { \
-		TYPE _val = (TYPE)(VAL); \
-		size_t _result = fwrite(&_val, sizeof(_val), 1, (FILE)); \
-		dbg_assert(_result > 0); \
+		TYPE __val = (TYPE)(VAL); \
+		const size_t __result = fwrite(&__val, sizeof(__val), 1, (FILE)); \
+		if (__result == 0) { \
+			fprintf(stderr, "Unable to write to the file: %s\n", strerror(errno)); \
+			exit(errno); \
+		} \
 	} while (0) \
 
 
@@ -48,9 +54,9 @@ img_init(const char *name, u32 w, u32 h, enum img_type t)
 		// .ppm header starts with "P3" indentifier on the 1st line
 		// followed by width and height (with space between) on the 2nd line
 		// and max color value (255) on the 3rd line
-		_img_fprintf(file, "P3\n");
-		_img_fprintf(file, "%"PRIu32" %"PRIu32"\n", w, h);
-		_img_fprintf(file, "255\n");
+		_IMG_FPRINTF(file, "P3\n");
+		_IMG_FPRINTF(file, "%"PRIu32" %"PRIu32"\n", w, h);
+		_IMG_FPRINTF(file, "255\n");
 		break;
 	} case IMG_TYPE_BMP: {
 		const u8 HDRSIZE = 14; // size of primary .bmp header
@@ -110,7 +116,7 @@ img_write(struct img_context *ctx, struct img_pixel px)
 	}
 	switch (ctx->_type) {
 	case IMG_TYPE_PPM:
-		_img_fprintf(
+		_IMG_FPRINTF(
 			ctx->_file,
 			"%"PRIu8" %"PRIu8" %"PRIu8"\n",
 			px.r,
