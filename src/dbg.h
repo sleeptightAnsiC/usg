@@ -13,15 +13,18 @@
  *	Defining this macro strips any debug functionality
  */
 
-#ifndef DBG_DISABLED
-
-#define DBG_CODE \
-	if (0); else
-
+// NOTE: static assert is always there,
+// because it changes nothing in shipping build
+// and because it may appear outside of function body
 #define _DBG_STATIC_ASSERT_3(COND,MSG) struct STATIC_ASSERTION_##MSG { char STATIC_ASSERTION_##MSG[(COND) ? 1 : -1]; }
 #define _DBG_STATIC_ASSERT_2(COND,L) _DBG_STATIC_ASSERT_3(COND,AT_LINE_##L)
 #define _DBG_STATIC_ASSERT_1(COND,L) _DBG_STATIC_ASSERT_2(COND,L)
 #define DBG_STATIC_ASSERT(COND) _DBG_STATIC_ASSERT_1(COND,__LINE__)
+
+#ifndef DBG_DISABLED
+
+#define DBG_CODE \
+	if (0); else
 
 #define _dbg_log(PREFIX, ...) \
 	(void)( \
@@ -55,7 +58,6 @@
 #else  // DBG_DISABLED
 
 #define DBG_CODE if (1); else
-#define DBG_STATIC_ASSERT(COND) ((void)0)
 #define dbg_log(...) ((void)0)
 #define dbg_error(...) ((void)0)
 #define dbg_assert(COND) ((void)0)
