@@ -11,10 +11,8 @@
 static void
 main_help(void)
 {
-	//    --------------------------------------------------------------------------------
+	//   "-------------------------------------------------------------------------------"
 	puts("Ulam Spiral Generator <https://github.com/sleeptightAnsiC/usg>");
-	puts("Usage:");
-	puts("  usg [options...]");
 	puts("Synopsis:");
 	puts("  usg [--size <NUM>] [--type <ppm|bmp>] [--out <FILE>] [--fg <RRGGBBAA>]");
 	puts("      [--bg <RRGGBBAA>] [-h] [--help]");
@@ -33,7 +31,7 @@ main_help(void)
 	puts("  -h --help      Prints this help message and exits");
 	puts("Example:");
 	puts("  usg --out spiral.bmp --size 1024 --fg ff0000ff");
-	//    --------------------------------------------------------------------------------
+	//   "-------------------------------------------------------------------------------"
 }
 
 int
