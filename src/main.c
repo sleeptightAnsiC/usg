@@ -79,6 +79,9 @@ main(int argc, const char *argv[])
 			++i;
 		} else if (!strcmp(argv[i], "--size")) {
 			if (i + 1 == argc) goto missing_additional_argument;
+			// TODO: would be nice to merge this branch with img_pixel_from_arg
+			// because both of these functions do very similar task
+			// and because I may reuse this somewhere later (in different project)
 			size = 0;
 			for (const char *arg = argv[i + 1]; *arg != '\0'; ++arg) {
 				if (*arg > '9' || *arg < '0') goto invalid_size_argument;

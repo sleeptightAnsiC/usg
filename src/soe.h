@@ -10,7 +10,7 @@
  * https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
  *
  * SOE_OPTIMIZED_MEM
- *	This flag changes how cache stores the values.
+ *	This flag changes how soe_cache stores the _data.
  *	Defining it results in 16x less memory usage,
  *	but accessing cache becomes slower.
  */

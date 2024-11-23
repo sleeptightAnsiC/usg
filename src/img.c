@@ -144,6 +144,7 @@ img_pixel_from_arg(struct img_pixel *pix_out, const char *arg)
 	// https://en.cppreference.com/w/c/string/byte/strtoimax
 	// NOTE: after checking strtomax out, I don't like
 	// how it handles the garbage isside of string and reports errors
+	// TODO: let's merge it someday with branch parsing --size argument in main()
 	dbg_assert(pix_out != NULL);
 	dbg_assert(arg != NULL);
 	u8 vals[8];
@@ -162,8 +163,7 @@ img_pixel_from_arg(struct img_pixel *pix_out, const char *arg)
 		else
 			dbg_unreachable();
 	}
-	if (arg[8] != '\0')
-		return false;
+	if (arg[8] != '\0') return false;
 	pix_out->r = (u8)(vals[0] * 16 + vals[1]);
 	pix_out->g = (u8)(vals[2] * 16 + vals[3]);
 	pix_out->b = (u8)(vals[4] * 16 + vals[5]);
