@@ -13,7 +13,7 @@ main_help(void)
 {
 	//   "-------------------------------------------------------------------------------"
 	puts("Ulam Spiral Generator <https://github.com/sleeptightAnsiC/usg>");
-	puts("Synopsis:");
+	puts("Usage:");
 	puts("  usg [--size <NUM>] [--type <ppm|bmp>] [--out <FILE>] [--fg <RRGGBBAA>]");
 	puts("      [--bg <RRGGBBAA>] [-h] [--help]");
 	puts("Options:");
