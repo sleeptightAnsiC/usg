@@ -8,14 +8,8 @@
  * Note that this algorithm requires caching
  * and so it allocates memory on the heap
  * https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
- *
- * SOE_OPTIMIZED_MEM
- *	This flag changes how soe_cache stores the _data.
- *	Defining it results in 16x less memory usage,
- *	but accessing cache becomes slower.
  */
 
-// #define SOE_OPTIMIZED_MEM
 
 struct soe_cache {
 	u64 _max;
