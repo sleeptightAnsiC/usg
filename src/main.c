@@ -112,8 +112,7 @@ main(int argc, const char *argv[])
 		switch (type) {
 		case IMG_TYPE_INVALID:
 			type = IMG_TYPE_BMP;
-			out = "a.bmp";
-			break;
+			/* FALLTHROUGH */
 		case IMG_TYPE_BMP:
 			out = "a.bmp";
 			break;
