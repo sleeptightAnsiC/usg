@@ -1,7 +1,7 @@
 
-#include <stdint.h>
 #include "./spr.h"
 #include "./dbg.h"
+#include "./typ.h"
 
 
 #define _spr_abs(VAL) \
@@ -14,14 +14,14 @@
 	((VAL) * (VAL)) \
 
 
-uint64_t
-spr_coords_to_val(int64_t x, int64_t y)
+u64
+spr_coords_to_val(i64 x, i64 y)
 {
-	const int64_t xabs = _spr_abs(x);
-	const int64_t yabs = _spr_abs(y);
-	const int64_t layer = _spr_max(xabs, yabs);
-	const int64_t max = _spr_pow2(layer * 2 + 1);
-	int64_t val;
+	const i64 xabs = _spr_abs(x);
+	const i64 yabs = _spr_abs(y);
+	const i64 layer = _spr_max(xabs, yabs);
+	const i64 max = _spr_pow2(layer * 2 + 1);
+	i64 val;
 	if (y == -layer) {
 		val = max - (layer - x);
 	} else if (x == -layer) {
@@ -31,24 +31,24 @@ spr_coords_to_val(int64_t x, int64_t y)
 	} else {
 		val = max - (6 * layer) - (layer - y);
 	}
-	return (uint64_t)val;
+	return (u64)val;
 }
 
-int64_t
-spr_screen_to_coord_x(uint64_t x, uint64_t wh)
+i64
+spr_screen_to_coord_x(u64 x, u64 wh)
 {
 	dbg_assert(wh % 2 != 0);
-	const uint64_t half = wh / 2;
-	const int64_t coord = (int64_t)(x - half);
+	const u64 half = wh / 2;
+	const i64 coord = (i64)(x - half);
 	return coord;
 }
 
-int64_t
-spr_screen_to_coord_y(uint64_t y, uint64_t wh)
+i64
+spr_screen_to_coord_y(u64 y, u64 wh)
 {
 	dbg_assert(wh % 2 != 0);
-	const uint64_t half = wh / 2;
-	const int64_t coord = (int64_t)(half - y);
+	const u64 half = wh / 2;
+	const i64 coord = (i64)(half - y);
 	return coord;
 }
 

@@ -1,13 +1,13 @@
 
-#ifndef SPR_H
-#define SPR_H
+#ifndef _SPR_H
+#define _SPR_H
 
-#include <stdint.h>
+#include "./typ.h"
 
 // Math for accessing values at the Spiral
 
-uint64_t spr_coords_to_val(int64_t x, int64_t y);
-int64_t spr_screen_to_coord_x(uint64_t x, uint64_t wh);
-int64_t spr_screen_to_coord_y(uint64_t y, uint64_t wh);
+u64 spr_coords_to_val(i64 x, i64 y);
+i64 spr_screen_to_coord_x(u64 x, u64 wh);
+i64 spr_screen_to_coord_y(u64 y, u64 wh);
 
-#endif  // SPR_H
+#endif  // _SPR_H

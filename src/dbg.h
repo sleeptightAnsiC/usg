@@ -13,82 +13,64 @@
  *	Defining this macro strips any debug functionality
  */
 
-// #define DBG_DISABLED
+// NOTE: static assert is always there,
+// because it changes nothing in shipping build
+// and because it may appear outside of function body
+#define _DBG_STATIC_ASSERT_3(COND,MSG) struct STATIC_ASSERTION_##MSG { char STATIC_ASSERTION_##MSG[(COND) ? 1 : -1]; }
+#define _DBG_STATIC_ASSERT_2(COND,L) _DBG_STATIC_ASSERT_3(COND,AT_LINE_##L)
+#define _DBG_STATIC_ASSERT_1(COND,L) _DBG_STATIC_ASSERT_2(COND,L)
+#define DBG_STATIC_ASSERT(COND) _DBG_STATIC_ASSERT_1(COND,__LINE__)
 
 #ifndef DBG_DISABLED
-# define DBG_CODE if (0); else
-#else
-# define DBG_CODE if (1); else
-#endif
 
-#ifndef DBG_DISABLED
-# define DBG_STATIC_ASSERT(COND) _DBG_STATIC_ASSERT_INTERNAL((COND))
-# define _DBG_CONCAT(prefix, suffix) prefix##suffix
-# define _DBG_UNIQUE_NAME(prefix) _DBG_CONCAT(prefix##_, __LINE__)
-# define _DBG_STATIC_ASSERT_INTERNAL(EXPRESSION) \
-	struct _DBG_UNIQUE_NAME(STATIC_ASSERTION_FAILED) \
-	{ char STATIC_ASSERTION_FAILED[(EXPRESSION) ? 1 : -1]; }
-#else
-# define DBG_STATIC_ASSERT(COND)
-#endif
+#define DBG_CODE \
+	if (0); else
 
-#ifndef DBG_DISABLED
-# define _dbg_log(PREFIX, ...) \
-	do { \
-		/* fprintf(stderr, "[%s:%d:%s] %s: ", __FILE__, __LINE__, __func__, PREFIX); */ \
-		fprintf(stderr, "[%s] %s: ", __func__, PREFIX); \
-		fprintf(stderr, __VA_ARGS__); \
-		fprintf(stderr, "\n"); \
-	} while (0)
-#else
-# define _dbg_log(PREFIX, ...) \
-	(void)(COND)
-#endif
+#define _dbg_log(PREFIX, ...) \
+	(void)( \
+		fprintf(stderr, "[%s] %s: ", __func__, PREFIX), \
+		fprintf(stderr, __VA_ARGS__), \
+		fprintf(stderr, "\n"), \
+	0)
 
-
-#ifndef DBG_DISABLED
-# define dbg_log(...) \
+#define dbg_log(...) \
 	_dbg_log("log", __VA_ARGS__)
-#else
-# define dbg_log(...) \
-	(void)(__VA_ARGS__)
-#endif
 
-
-#ifndef DBG_DISABLED
-# define dbg_error(...) \
+#define dbg_error(...) \
 	_dbg_log("ERROR", __VA_ARGS__)
-#else
-# define dbg_error(...) \
-	(void)(__VA_ARGS__)
-#endif
 
-
-#ifndef DBG_DISABLED
-# define dbg_assert(COND) \
-	do{ \
-		if (errno != 0) \
-			dbg_error("%s (errno)", strerror(errno)); \
-		assert(COND); \
-	} while (0)
-#else
-// FIXME: COND might be a function call so this should be just discarded
-# define dbg_assert(COND) \
-	(void)(COND)
-#endif
-
+#define dbg_assert(COND) \
+	(void)( \
+		(errno != 0) ? \
+			dbg_error("%s (errno)", strerror(errno)) \
+		: \
+			(void)0, \
+		assert(COND), \
+	0)
 
 // TODO: compiler specific function can be added here
-#ifndef DBG_DISABLED
-# define dbg_unreachable() \
-	do{ \
-		dbg_error("This code should never be reached!"); \
-		assert(0); \
-	} while (0)
+#define dbg_unreachable() \
+	(void)( \
+		dbg_error("This code should never be reached!"), \
+		assert(0), \
+	0)
+
+#else  // DBG_DISABLED
+
+#define DBG_CODE if (1); else
+#define dbg_log(...) ((void)0)
+#define dbg_error(...) ((void)0)
+#define dbg_assert(COND) ((void)0)
+
+#if defined(__GNUC__)
+#	define dbg_unreachable() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#	define dbg_unreachable() __assume(0)
 #else
-# define dbg_unreachable()
+#	define dbg_unreachable() ((void)0)
 #endif
 
+#endif  // DBG_DISABLED
 
 #endif //DBG_H
 
