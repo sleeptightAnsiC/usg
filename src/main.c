@@ -55,12 +55,32 @@ main(int argc, const char *argv[])
 			if (i + 1 == argc) goto missing_additional_argument;
 			const char *arg = argv[i + 1];
 			struct img_pixel *color = !strcmp(argv[i], "--fg") ? &fg : &bg;
-			const b8 success = img_pixel_from_arg(color, arg);
-			if (!success) {
-				fprintf(stderr, "Invalid color format: %s\n", arg);
-				exit(EXIT_FAILURE);
+			u8 vals[8];
+			for (int j = 0; j < 8; j += 1) {
+				DBG_STATIC_ASSERT('0' < 'A');
+				DBG_STATIC_ASSERT('A' < 'a');
+				if (arg[j] == '\0') goto invalid_color_format;
+				if (arg[j] < '0') goto invalid_color_format;
+				if (arg[j] > 'f') goto invalid_color_format;
+				if (arg[j] >= 'a')
+					vals[j] = (u8)(arg[j] - 'a' + 10);
+				else if (arg[j] >= 'A')
+					vals[j] = (u8)(arg[j] - 'A' + 10);
+				else if (arg[j] >= '0')
+					vals[j] = (u8)(arg[j] - '0');
+				else
+					dbg_unreachable();
 			}
+			if (arg[8] != '\0') goto invalid_color_format;
+			color->r = (u8)(vals[0] * 16 + vals[1]);
+			color->g = (u8)(vals[2] * 16 + vals[3]);
+			color->b = (u8)(vals[4] * 16 + vals[5]);
+			color->a = (u8)(vals[6] * 16 + vals[7]);
 			++i;
+			continue;
+		invalid_color_format:
+			fprintf(stderr, "Invalid color format: %s\n", arg);
+			exit(EXIT_FAILURE);
 		} else if (!strcmp(argv[i], "--out")) {
 			if (i + 1 == argc) goto missing_additional_argument;
 			out = argv[i + 1];
@@ -79,9 +99,6 @@ main(int argc, const char *argv[])
 			++i;
 		} else if (!strcmp(argv[i], "--size")) {
 			if (i + 1 == argc) goto missing_additional_argument;
-			// TODO: would be nice to merge this branch with img_pixel_from_arg
-			// because both of these functions do very similar task
-			// and because I may reuse this somewhere later (in different project)
 			size = 0;
 			for (const char *arg = argv[i + 1]; *arg != '\0'; ++arg) {
 				if (*arg > '9' || *arg < '0') goto invalid_size_argument;
