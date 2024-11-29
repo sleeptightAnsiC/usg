@@ -154,3 +154,13 @@ img_write(struct img_context *ctx, struct img_pixel px)
 	}
 }
 
+u64
+img_val_from_coords(struct img_context *ctx, u32 x, u32 y)
+{
+	dbg_assert(ctx != NULL);
+	dbg_assert(x < ctx->_width);
+	dbg_assert(y < ctx->_height);
+	if (ctx->_type == IMG_TYPE_BMP)
+		x = ctx->_height - x;
+}
+

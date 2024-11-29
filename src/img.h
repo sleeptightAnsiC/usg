@@ -57,5 +57,6 @@ struct img_context {
 struct img_context img_init(const char *name, u32 w, u32 h, enum img_type t);
 void img_deinit(struct img_context *ctx);
 void img_write(struct img_context *ctx, struct img_pixel px);
+u64 img_val_from_coords(struct img_context *ctx, u32 x, u32 y);
 
 #endif  // _IMG_H

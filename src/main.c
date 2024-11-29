@@ -14,21 +14,23 @@ main_help(void)
 	//   "-------------------------------------------------------------------------------"
 	puts("Ulam Spiral Generator <https://github.com/sleeptightAnsiC/usg>");
 	puts("Usage:");
-	puts("  usg [--size <NUM>] [--type <ppm|bmp>] [--out <FILE>] [--fg <RRGGBBAA>]");
-	puts("      [--bg <RRGGBBAA>] [-h] [--help]");
+	puts("  usg [option1] [option2] [optionN]");
 	puts("Options:");
-	puts("  --size <NUM>   Size of the created image in pixels (default: 128)");
-	puts("                 For example, when set to 10, the resolution will be 10x10");
-	puts("                 and program will count prime numbers up to value 100");
-	puts("  --type <TYPE>  Type of output image file. Accepts either 'ppm' or 'bmp'");
-	puts("                 If unset, determined automatically based on file name");
-	puts("  --out <FILE>   Name of output image file (default: 'a.bmp')");
-	puts("  --fg <COLOR>   Foreground color of the image (default: '000000ff')");
-	puts("  --bg <COLOR>   Background color of the image (default: 'ffffffff')");
-	puts("                 COLOR must be in HEX format represented by exactly eight");
-	puts("                 hexidecimal symbols without any prefix (regex: [0-9a-fA-F])");
-	puts("                 Alpha channel is discarded for image types not supporting it");
-	puts("  -h --help      Prints this help message and exits");
+	puts("  --width <NUM>   Width of the image in pixels (default: 128)");
+	puts("  --height <NUM>  Height of the image in pixels (default: 128)");
+	puts("  --type <TYPE>   Type of output image file. Accepts either 'ppm' or 'bmp'");
+	puts("                  If unset, determined automatically based on file name");
+	puts("  --out <FILE>    Name of output image file (default: 'a.bmp')");
+	puts("  --fg <COLOR>    Foreground color of the image (default: '000000ff')");
+	puts("  --bg <COLOR>    Background color of the image (default: 'ffffffff')");
+	puts("                  COLOR must be in HEX format represented by exactly eight");
+	puts("                  hexidecimal symbols without any prefix (regex: [0-9a-fA-F])");
+	puts("                  Alpha channel is discarded for image types not supporting it");
+	puts("  --cx <NUM>      Center coordinate X of the spiral (default: width/2)");
+	puts("  --cy <NUM>      Center coordinate Y of the spiral (default: height/2)");
+	puts("                  NUM must be a \"screen coordinate\",");
+	puts("                  meaning that 0:0 is in the top left corner of the image");
+	puts("  -h --help       Prints this help message and exits");
 	puts("Example:");
 	puts("  usg --out spiral.bmp --size 1024 --fg ff0000ff");
 	//   "-------------------------------------------------------------------------------"
@@ -167,11 +169,9 @@ main(int argc, const char *argv[])
 	const u64 max = size * size;
 	const struct soe_cache cache = soe_init(max);
 	struct img_context image = img_init(out, size, size, type);
-	for (u64 i = 0; i < size; ++i) {
-		for (u64 j = 0; j < size; ++j) {
-			const i64 x = spr_screen_to_coord_x(j, size);
-			const i64 y = spr_screen_to_coord_y(i, size);
-			const u64 val = spr_coords_to_val(x,y);
+	for (u32 x = 0; x < size; ++x) {
+		for (u32 y = 0; y < size; ++y) {
+			const u64 val = img_val_from_coords(&image, x,y);
 			const b8 prime = soe_is_prime(cache, val);
 			const struct img_pixel color = prime ? fg : bg;
 			img_write(&image, color);
