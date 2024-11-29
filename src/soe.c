@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h>  // calloc free size_t
 #include "./soe.h"
 #include "./dbg.h"
 #include "./typ.h"
@@ -11,18 +11,18 @@ static inline b8 _soe_is_composite(struct soe_cache cache, u64 num);
 
 
 void
-soe_deinit(const struct soe_cache cache)
+soe_deinit(struct soe_cache cache)
 {
 	DBG_CODE {
 		const size_t mem = sizeof(cache._data[0]) * cache._max;
-		const double fmt = (double)(mem) / 1024 / 1024 ;
+		const f64 fmt = (f64)(mem) / 1024 / 1024 ;
 		dbg_log("Total heap size allocation for soe_cash::_data : %.1f MiB", fmt);
 	}
 	free(cache._data);
 }
 
 b8
-soe_is_prime(const struct soe_cache cache, u64 num)
+soe_is_prime(struct soe_cache cache, u64 num)
 {
 	dbg_assert(num > 0);
 	return (num == 2) || ((num % 2 != 0) && !_soe_is_composite(cache, num));
@@ -43,9 +43,6 @@ _soe_composite_set(struct soe_cache cache, u64 num)
 static inline b8
 _soe_is_composite(struct soe_cache cache, u64 num)
 {
-	// NOTE: (8 * 2)
-	// because every even number is skipped
-	// and because bits are stored inside of uint8_t
 	dbg_assert(num <= cache._max * 8 * 2);
 	dbg_assert(num % 2 != 0);
 	const u64 idx = num / (8 * 2);
@@ -63,6 +60,7 @@ soe_init(u64 max)
 	struct soe_cache cache;
 	max += 1;
 	cache._max = (max / 16) + 1;
+	dbg_assert(cache._max <= SIZE_MAX);
 	cache._data = calloc((size_t)(cache._max), sizeof(cache._data[0]));
 	dbg_assert(cache._data != NULL);
 	_soe_composite_set(cache, 1);

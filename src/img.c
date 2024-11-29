@@ -59,31 +59,49 @@ img_init(const char *name, u32 w, u32 h, enum img_type t)
 		_IMG_FPRINTF(file, "255\n");
 		break;
 	} case IMG_TYPE_BMP: {
-		const u8 HDRSIZE = 14; // size of primary .bmp header
-		const u8 DIBSIZE = 12; // size of DIB, secondary .bmp header
-		// primary header - BMP Identifier ("BM") - 2 bytes
-		_IMG_FDUMP(u8, 'B', file);
-		_IMG_FDUMP(u8, 'M', file);
-		// primary header - The size of the BMP file in bytes (pixel array + headers) - 4 bytes
-		size_t bmpsize = w * h * sizeof(u32) + HDRSIZE + DIBSIZE;
-		_IMG_FDUMP(u32, bmpsize, file);
-		// primary header - Reserved space (empty in this case, but can be anything) - 2 + 2 bytes
-		_IMG_FDUMP(u32, 0, file);
-		// primary header - Starting adress of the pixel array - 4 bytes
-		_IMG_FDUMP(u32, HDRSIZE + DIBSIZE, file);
-		// DIB BITMAPCOREHEADER - The size of DIB header in bytes (12) - 4 bytes
-		_IMG_FDUMP(u32, DIBSIZE, file);
-		// DIB BITMAPCOREHEADER - Bitmap width in pixels - 2 bytes
-		dbg_assert(w <= INT16_MAX);
-		_IMG_FDUMP(i16, w, file);
-		// DIB BITMAPCOREHEADER - Bitmap height in pixels - 2 bytes
-		// WARN: height is negative, because image is stored from top to bottom
-		dbg_assert(h <= INT16_MAX);
-		_IMG_FDUMP(i16, -(i16)(h), file);
-		// DIB BITMAPCOREHEADER - Number of color planes (always 1) - 2 bytes
-		_IMG_FDUMP(u16, 1, file);
-		// DIB BITMAPCOREHEADER - Number of bits per pixel (8 bits * 4 channels) - 2 bytes
-		_IMG_FDUMP(u16, 32, file);
+		const u8 HDRSIZE = 14; // size of file header
+		const u8 DIBSIZE = 40; // size of DIB header
+		{  // file header
+			// BMP Identifier ("BM") - 2 bytes
+			_IMG_FDUMP(u8, 'B', file);
+			_IMG_FDUMP(u8, 'M', file);
+			// The size of the BMP file in bytes (pixel array + headers) - 4 bytes
+			DBG_STATIC_ASSERT(sizeof(struct img_pixel) == sizeof(u32));
+			size_t bmpsize = w * h * sizeof(struct img_pixel) + HDRSIZE + DIBSIZE;
+			_IMG_FDUMP(u32, bmpsize, file);
+			// Reserved space (empty in this case, but can be anything) - 2 + 2 bytes
+			_IMG_FDUMP(u32, 0, file);
+			// Starting adress of the pixel array - 4 bytes
+			_IMG_FDUMP(u32, HDRSIZE + DIBSIZE, file);
+		}
+		{  // DIB header BITMAPINFOHEADER
+			// the size of this header, in bytes (40) - 4 bytes
+			_IMG_FDUMP(u32, DIBSIZE, file);
+			// the bitmap width in pixels (signed integer) - 4 bytes
+			dbg_assert(w < INT32_MAX);
+			_IMG_FDUMP(i32, (i32)w, file);
+			// the bitmap height in pixels (signed integer) - 4 bytes
+			dbg_assert(h < INT32_MAX);
+			_IMG_FDUMP(i32, (i32)h, file);
+			// the number of color planes (must be 1) - 2 bytes
+			_IMG_FDUMP(u16, 1, file);
+			// the number of bits per pixel, which is the color depth of the image - 2 bytes
+			_IMG_FDUMP(u16, 32, file);
+			// the compression method being used (0 for BI_RGB which stands for no compression) - 4 bytes
+			_IMG_FDUMP(u32, 0, file);
+			// the image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps. - 4 bytes
+			_IMG_FDUMP(u32, 0, file);
+			// the horizontal resolution of the image. (pixel per metre, signed integer) - 4 bytes
+			// FIXME: I'm not sure what it does but stb_image sets it to 0
+			_IMG_FDUMP(i32, 0, file);
+			// the vertical resolution of the image. (pixel per metre, signed integer) - 4 bytes
+			// FIXME: I'm not sure what it does but stb_image sets it to 0
+			_IMG_FDUMP(i32, 0, file);
+			// the number of colors in the color palette, or 0 to default to 2n - 4 bytes
+			_IMG_FDUMP(u32, 0, file);
+			// the number of important colors used, or 0 when every color is important; generally ignored - 4 bytes
+			_IMG_FDUMP(u32, 0, file);
+		}
 		break;
 	} case IMG_TYPE_INVALID: {
 	} default: {
@@ -125,9 +143,9 @@ img_write(struct img_context *ctx, struct img_pixel px)
 		(void)px.a;
 		break;
 	case IMG_TYPE_BMP:
-		_IMG_FDUMP(u8, px.r, ctx->_file);
-		_IMG_FDUMP(u8, px.g, ctx->_file);
 		_IMG_FDUMP(u8, px.b, ctx->_file);
+		_IMG_FDUMP(u8, px.g, ctx->_file);
+		_IMG_FDUMP(u8, px.r, ctx->_file);
 		_IMG_FDUMP(u8, px.a, ctx->_file);
 		break;
 	case IMG_TYPE_INVALID:
