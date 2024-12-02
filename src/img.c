@@ -197,12 +197,13 @@ img_val_from_coords(struct img_context *ctx, u32 x, u32 y)
 u64
 img_val_max(struct img_context *ctx)
 {
-	// FIXME: this function does not respect all variables (start-x start-v start-val etc)
-	// and will break if said variables have non-default values
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_width <= UINT64_MAX / ctx->_height);
 	dbg_assert(ctx->_height <= UINT64_MAX / ctx->_width);
-	const u64 out = ctx->_width * ctx->_height;
+	const u32 adj_width = (ctx->_width - ctx->_start_x > ctx->_width / 2) ? (ctx->_width - ctx->_start_x) * 2 : (ctx->_start_x - ctx->_width) * 2;
+	const u32 adj_height = (ctx->_height - ctx->_start_y > ctx->_height / 2) ? (ctx->_height - ctx->_start_y) * 2 : (ctx->_start_y - ctx->_height) * 2;
+	const u32 max = _img_max(adj_width, adj_height);
+	const u64 out = _img_pow2(max) + ctx->_start_val;
 	return out;
 }
 

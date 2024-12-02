@@ -31,6 +31,8 @@
  *
  */
 
+// TODO: add .png support
+
 enum img_type {
 	IMG_TYPE_INVALID,
 	IMG_TYPE_PPM,
