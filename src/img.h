@@ -51,12 +51,16 @@ struct img_context {
 	FILE *const _file;
 	const u32 _width;
 	const u32 _height;
+	const u32 _start_x;
+	const u32 _start_y;
+	const u32 _start_val;
 	const enum img_type _type;
 };
 
-struct img_context img_init(const char *name, u32 w, u32 h, enum img_type t);
+struct img_context img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type t);
 void img_deinit(struct img_context *ctx);
 void img_write(struct img_context *ctx, struct img_pixel px);
 u64 img_val_from_coords(struct img_context *ctx, u32 x, u32 y);
+u64 img_val_max(struct img_context *ctx);
 
 #endif  // _IMG_H

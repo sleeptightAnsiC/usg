@@ -9,15 +9,11 @@
 #include "./typ.h"
 
 
-DBG_STATIC_ASSERT(UINT8_MAX == 255);
-
 #define _IMG_FPRINTF(...) \
 	do { \
 		const int __result = fprintf(__VA_ARGS__); \
-		if (__result == 0) { \
-			fprintf(stderr, "Unable to write to the file: %s\n", strerror(errno)); \
-			exit(errno); \
-		} \
+		dbg_assert(__result > 0); \
+		(void)__result; \
 	} while (0) \
 
 // Takes VAL, stores it as TYPE (type coersion/conversion is expected)
@@ -26,15 +22,22 @@ DBG_STATIC_ASSERT(UINT8_MAX == 255);
 	do { \
 		TYPE __val = (TYPE)(VAL); \
 		const size_t __result = fwrite(&__val, sizeof(__val), 1, (FILE)); \
-		if (__result == 0) { \
-			fprintf(stderr, "Unable to write to the file: %s\n", strerror(errno)); \
-			exit(errno); \
-		} \
+		dbg_assert(__result > 0); \
+		(void)__result; \
 	} while (0) \
+
+#define _img_max(A, B) \
+	((A) > (B) ? (A) : (B))
+
+#define _img_abs(VAL) \
+	((VAL) < 0 ? (-VAL) : (VAL))
+
+#define _img_pow2(VAL) \
+	((VAL) * (VAL))
 
 
 struct img_context
-img_init(const char *name, u32 w, u32 h, enum img_type t)
+img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type type)
 {
 	dbg_log("Opening file: %s", name);
 	FILE *const file = fopen(name , "w");
@@ -45,17 +48,20 @@ img_init(const char *name, u32 w, u32 h, enum img_type t)
 	struct img_context ctx = {
 		._pixels = 0,
 		._file = file,
-		._width = w,
-		._height = h,
-		._type = t,
+		._width = width,
+		._height = height,
+		._type = type,
+		._start_x = start_x,
+		._start_y = start_y,
+		._start_val = start_val,
 	};
-	switch (ctx._type) {
+	switch (type) {
 	case IMG_TYPE_PPM: {
 		// .ppm header starts with "P3" indentifier on the 1st line
 		// followed by width and height (with space between) on the 2nd line
 		// and max color value (255) on the 3rd line
 		_IMG_FPRINTF(file, "P3\n");
-		_IMG_FPRINTF(file, "%"PRIu32" %"PRIu32"\n", w, h);
+		_IMG_FPRINTF(file, "%"PRIu32" %"PRIu32"\n", width, height);
 		_IMG_FPRINTF(file, "255\n");
 		break;
 	} case IMG_TYPE_BMP: {
@@ -67,7 +73,7 @@ img_init(const char *name, u32 w, u32 h, enum img_type t)
 			_IMG_FDUMP(u8, 'M', file);
 			// The size of the BMP file in bytes (pixel array + headers) - 4 bytes
 			DBG_STATIC_ASSERT(sizeof(struct img_pixel) == sizeof(u32));
-			size_t bmpsize = w * h * sizeof(struct img_pixel) + HDRSIZE + DIBSIZE;
+			size_t bmpsize = width * height * sizeof(struct img_pixel) + HDRSIZE + DIBSIZE;
 			_IMG_FDUMP(u32, bmpsize, file);
 			// Reserved space (empty in this case, but can be anything) - 2 + 2 bytes
 			_IMG_FDUMP(u32, 0, file);
@@ -78,11 +84,12 @@ img_init(const char *name, u32 w, u32 h, enum img_type t)
 			// the size of this header, in bytes (40) - 4 bytes
 			_IMG_FDUMP(u32, DIBSIZE, file);
 			// the bitmap width in pixels (signed integer) - 4 bytes
-			dbg_assert(w < INT32_MAX);
-			_IMG_FDUMP(i32, (i32)w, file);
+			dbg_assert(width < INT32_MAX);
+			_IMG_FDUMP(i32, (i32)width, file);
 			// the bitmap height in pixels (signed integer) - 4 bytes
-			dbg_assert(h < INT32_MAX);
-			_IMG_FDUMP(i32, (i32)h, file);
+			// WARN: value is negative in order to store image top-to-bottom
+			dbg_assert(height < INT32_MAX);
+			_IMG_FDUMP(i32, -(i32)height, file);
 			// the number of color planes (must be 1) - 2 bytes
 			_IMG_FDUMP(u16, 1, file);
 			// the number of bits per pixel, which is the color depth of the image - 2 bytes
@@ -92,10 +99,10 @@ img_init(const char *name, u32 w, u32 h, enum img_type t)
 			// the image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps. - 4 bytes
 			_IMG_FDUMP(u32, 0, file);
 			// the horizontal resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			// FIXME: I'm not sure what it does but stb_image sets it to 0
+			// FIXME: I'm not sure what this does but checked in stb_image and it sets this to 0
 			_IMG_FDUMP(i32, 0, file);
 			// the vertical resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			// FIXME: I'm not sure what it does but stb_image sets it to 0
+			// FIXME: I'm not sure what this does but checked in stb_image and it sets this to 0
 			_IMG_FDUMP(i32, 0, file);
 			// the number of colors in the color palette, or 0 to default to 2n - 4 bytes
 			_IMG_FDUMP(u32, 0, file);
@@ -160,7 +167,42 @@ img_val_from_coords(struct img_context *ctx, u32 x, u32 y)
 	dbg_assert(ctx != NULL);
 	dbg_assert(x < ctx->_width);
 	dbg_assert(y < ctx->_height);
-	if (ctx->_type == IMG_TYPE_BMP)
-		x = ctx->_height - x;
+
+	const i64 adj_x = (i64)x - (i64)(ctx->_start_x);
+	const i64 adj_y = (i64)(ctx->_start_y) - (i64)y;
+	const i64 adj_x_abs = _img_abs(adj_x);
+	const i64 adj_y_abs = _img_abs(adj_y);
+	const i64 layer = _img_max(adj_x_abs, adj_y_abs);
+	const i64 max = _img_pow2(layer * 2 + 1);
+
+	i64 val;
+	if (adj_y == -layer) {
+		val = max - (layer - adj_x);
+	} else if (adj_x == -layer) {
+		val = max - (2 * layer) - (layer + adj_y);
+	} else if (adj_y == layer) {
+		val = max - (4 * layer) - (layer + adj_x);
+	} else if (adj_x == layer) {
+		val = max - (6 * layer) - (layer - adj_y);
+	} else {
+		dbg_unreachable();
+	}
+
+	dbg_assert(val >= 0);
+	dbg_assert((u64)val <= UINT64_MAX - ctx->_start_val + 1);
+	const u64 out = (u64)val + ctx->_start_val - 1;
+	return out;
+}
+
+u64
+img_val_max(struct img_context *ctx)
+{
+	// FIXME: this function does not respect all variables (start-x start-v start-val etc)
+	// and will break if said variables have non-default values
+	dbg_assert(ctx != NULL);
+	dbg_assert(ctx->_width <= UINT64_MAX / ctx->_height);
+	dbg_assert(ctx->_height <= UINT64_MAX / ctx->_width);
+	const u64 out = ctx->_width * ctx->_height;
+	return out;
 }
 
