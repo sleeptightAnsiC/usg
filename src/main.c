@@ -85,6 +85,17 @@ main_arg_to_color(const char *arg, struct img_pixel *out)
 	return true;
 }
 
+static void
+main_exit_failure(void)
+{
+	if (errno != 0)  {
+		perror("usg");
+		exit(errno);
+	} else {
+		exit(EXIT_FAILURE);
+	}
+}
+
 int
 main(int argc, const char *argv[])
 {
@@ -135,7 +146,7 @@ main(int argc, const char *argv[])
 				type = IMG_TYPE_PPM;
 			} else {
 				fprintf(stderr, "Invalid image type: %s\n", arg);
-				exit(EXIT_FAILURE);
+				main_exit_failure();
 			}
 			++i;
 		} else if (!strcmp(argv[i], "--width")) {
@@ -166,18 +177,18 @@ main(int argc, const char *argv[])
 			no_stdout = true;
 		} else {
 			fprintf(stderr, "Unknown option: %s\n", argv[i]);
-			exit(EXIT_FAILURE);
+			main_exit_failure();
 		}
 		continue;
 	missing_additional:
 		fprintf(stderr, "%s requires additional argument\n", argv[i]);
-		exit(EXIT_FAILURE);
+		main_exit_failure();
 	invalid_num:
 		fprintf(stderr, "Size is either invalid or out of scope: %s\n", argv[i + 1]);
-		exit(EXIT_FAILURE);
+		main_exit_failure();
 	invalid_color:
 		fprintf(stderr, "Invalid color format: %s\n", argv[i + 1]);
-		exit(EXIT_FAILURE);
+		main_exit_failure();
 	}
 
 	if (out == NULL) {
@@ -207,7 +218,7 @@ main(int argc, const char *argv[])
 		} else {
 			fprintf(stderr, "Unable to determine file type based on its name: %s\n", out);
 			fprintf(stderr, "Try enforcing file type with: --type\n");
-			exit(EXIT_FAILURE);
+			main_exit_failure();
 		}
 	}
 
@@ -221,7 +232,11 @@ main(int argc, const char *argv[])
 	dbg_assert(height <= UINT64_MAX / width);
 	struct img_context image = img_init(out, width, height, start_x, start_y, start_val, type);
 	const u64 max = img_val_max(&image);
-	const struct soe_cache cache = soe_init(max);
+	struct soe_cache *const cache = soe_init(max);
+	if (cache == NULL) {
+		fprintf(stderr, "failed to calculate Prime Numbers\n");
+		main_exit_failure();
+	}
 	for (u32 y = 0; y < height; ++y) {
 		for (u32 x = 0; x < width; ++x) {
 			const u64 val = img_val_from_coords(&image, x, y);
@@ -236,6 +251,6 @@ main(int argc, const char *argv[])
 	if (!no_stdout)
 		printf("%s\n", out);
 
-	return EXIT_SUCCESS;
+	exit(EXIT_SUCCESS);
 }
 
