@@ -228,8 +228,6 @@ main(int argc, const char *argv[])
 	if (!start_y_assigned)
 		start_y = height / 2;
 
-	dbg_assert(width <= UINT64_MAX / height);
-	dbg_assert(height <= UINT64_MAX / width);
 	struct img_context image = img_init(out, width, height, start_x, start_y, start_val, type);
 	const u64 max = img_val_max(&image);
 	struct soe_cache *const cache = soe_init(max);
