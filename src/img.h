@@ -25,8 +25,7 @@
  * .bmp
  *	Bitmap file - NOT human readable, uncompressed, widely supported
  *	This is as minimal BMP format as it is possible to implement.
- *	It uses 14 byte bmp header followed by 12 byte DIB BITMAPCOREHEADER header,
- *	with signed integers used for storing width and height.
+ *	It uses 14 byte file header followed by 40 byte DIB BITMAPINFOHEADER
  *	https://en.wikipedia.org/wiki/BMP_file_format
  *
  */
