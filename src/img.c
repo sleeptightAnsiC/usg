@@ -200,8 +200,9 @@ img_val_max(struct img_context *ctx)
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_width <= UINT64_MAX / ctx->_height);
 	dbg_assert(ctx->_height <= UINT64_MAX / ctx->_width);
-	const u32 adj_width = (ctx->_width - ctx->_start_x > ctx->_width / 2) ? (ctx->_width - ctx->_start_x) * 2 : (ctx->_start_x - ctx->_width) * 2;
-	const u32 adj_height = (ctx->_height - ctx->_start_y > ctx->_height / 2) ? (ctx->_height - ctx->_start_y) * 2 : (ctx->_start_y - ctx->_height) * 2;
+	// FIXME: the math for adj_width/height is way too ugly :)
+	const u32 adj_width = (ctx->_start_x < ctx->_width / 2) ? ((ctx->_width - ctx->_start_x) * 2 + 1) : (ctx->_start_x * 2 + 1);
+	const u32 adj_height = (ctx->_start_y < ctx->_height / 2) ? ((ctx->_height - ctx->_start_y) * 2 + 1) : (ctx->_start_y * 2 + 1);
 	const u32 max = _img_max(adj_width, adj_height);
 	const u64 out = _img_pow2(max) + ctx->_start_val;
 	return out;
