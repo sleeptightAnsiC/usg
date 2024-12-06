@@ -87,9 +87,8 @@ img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 
 			dbg_assert(width < INT32_MAX);
 			_IMG_FDUMP(i32, (i32)width, file);
 			// the bitmap height in pixels (signed integer) - 4 bytes
-			// WARN: value is negative in order to store image top-to-bottom
 			dbg_assert(height < INT32_MAX);
-			_IMG_FDUMP(i32, -(i32)height, file);
+			_IMG_FDUMP(i32, (i32)height, file);
 			// the number of color planes (must be 1) - 2 bytes
 			_IMG_FDUMP(u16, 1, file);
 			// the number of bits per pixel, which is the color depth of the image - 2 bytes
@@ -167,6 +166,15 @@ img_val_from_coords(struct img_context *ctx, u32 x, u32 y)
 	dbg_assert(ctx != NULL);
 	dbg_assert(x < ctx->_width);
 	dbg_assert(y < ctx->_height);
+
+	// NOTE: BMP stores images bottom-to-top by default.
+	// said format supports flipping the image by setting the height
+	// to negative value but after testing this out it seems image viewers
+	// do not handle it very well - e.g. some may flip the image as expected
+	// but still display negative height. I don't wanna relay on this and
+	// prefer to flip the image manually.
+	if (ctx->_type == IMG_TYPE_BMP)
+		y = ctx->_height - y - 1;
 
 	const i64 adj_x = (i64)x - (i64)(ctx->_start_x);
 	const i64 adj_y = (i64)(ctx->_start_y) - (i64)y;
