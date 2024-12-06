@@ -80,6 +80,10 @@ img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 
 			// Starting adress of the pixel array - 4 bytes
 			_IMG_FDUMP(u32, HDRSIZE + DIBSIZE, file);
 		}
+		// FIXME: bmp uses int32_t (Windows' signed intiger) to store height/width but
+		// representation of said int may not be portable as it should always be little endian (Intel) byte order
+		// this is also a concern with other intigers used down here. Would be nice to have some kind of static check for those.
+		// https://stackoverflow.com/questions/37368273/how-to-set-an-negative-value-to-the-resolution-of-a-bmp-image-in-hex
 		{  // DIB header BITMAPINFOHEADER
 			// the size of this header, in bytes (40) - 4 bytes
 			_IMG_FDUMP(u32, DIBSIZE, file);
@@ -97,11 +101,10 @@ img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 
 			_IMG_FDUMP(u32, 0, file);
 			// the image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps. - 4 bytes
 			_IMG_FDUMP(u32, 0, file);
+			// FIXME: I'm not sure what the next two do but checked in stb_image and it sets them to 0
 			// the horizontal resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			// FIXME: I'm not sure what this does but checked in stb_image and it sets this to 0
 			_IMG_FDUMP(i32, 0, file);
 			// the vertical resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			// FIXME: I'm not sure what this does but checked in stb_image and it sets this to 0
 			_IMG_FDUMP(i32, 0, file);
 			// the number of colors in the color palette, or 0 to default to 2n - 4 bytes
 			_IMG_FDUMP(u32, 0, file);
@@ -208,7 +211,7 @@ img_val_max(struct img_context *ctx)
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_width <= UINT64_MAX / ctx->_height);
 	dbg_assert(ctx->_height <= UINT64_MAX / ctx->_width);
-	// FIXME: the math for adj_width/height is way too ugly :)
+	// FIXME: the math for adj_width/height is way too ugly...
 	const u32 adj_width = (ctx->_start_x < ctx->_width / 2) ? ((ctx->_width - ctx->_start_x) * 2 + 1) : (ctx->_start_x * 2 + 1);
 	const u32 adj_height = (ctx->_start_y < ctx->_height / 2) ? ((ctx->_height - ctx->_start_y) * 2 + 1) : (ctx->_start_y * 2 + 1);
 	const u32 max = _img_max(adj_width, adj_height);
