@@ -31,7 +31,8 @@
  *
  */
 
-// TODO: add .png support
+// TODO: add .png support someday
+// https://en.wikipedia.org/wiki/PNG
 
 enum img_type {
 	IMG_TYPE_INVALID,
@@ -39,9 +40,7 @@ enum img_type {
 	IMG_TYPE_BMP,
 };
 
-// TODO: perhaps, rename to 'color' since
-// img_color makes more sense that img_pixel
-struct img_pixel {
+struct img_color {
 	u8 r;
 	u8 g;
 	u8 b;
@@ -59,9 +58,9 @@ struct img_context {
 	const enum img_type _type;
 };
 
-struct img_context img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type t);
+struct img_context img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type type);
 void img_deinit(struct img_context *ctx);
-void img_write(struct img_context *ctx, struct img_pixel px);
+void img_write(struct img_context *ctx, struct img_color col);
 u64 img_val_from_coords(struct img_context *ctx, u32 x, u32 y);
 u64 img_val_max(struct img_context *ctx);
 

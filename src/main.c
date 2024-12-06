@@ -10,7 +10,7 @@
 
 static void _main_help(void);
 static b8 _main_arg_to_u32(const char *arg, u32 *out);
-static b8 _main_arg_to_color(const char *arg, struct img_pixel *out);
+static b8 _main_arg_to_color(const char *arg, struct img_color *out);
 static void _main_exit_failure(void);
 
 
@@ -21,8 +21,8 @@ main(int argc, const char *argv[])
 	u32 height = 255;
 	enum img_type type = IMG_TYPE_INVALID;
 	const char *out = NULL;
-	struct img_pixel fg = {.r=0, .g=0, .b=0, .a=255};
-	struct img_pixel bg = {.r=255, .g=255, .b=255, .a=255};
+	struct img_color fg = {.r=0, .g=0, .b=0, .a=255};
+	struct img_color bg = {.r=255, .g=255, .b=255, .a=255};
 	b8 no_stdout = false;
 	u32 start_val = 1;
 	u32 start_x;
@@ -157,7 +157,7 @@ main(int argc, const char *argv[])
 		for (u32 x = 0; x < width; ++x) {
 			const u64 val = img_val_from_coords(&image, x, y);
 			const b8 prime = soe_is_prime(cache, val);
-			const struct img_pixel color = prime ? fg : bg;
+			const struct img_color color = prime ? fg : bg;
 			img_write(&image, color);
 		}
 	}
@@ -220,7 +220,7 @@ _main_arg_to_u32(const char *arg, u32 *out)
 }
 
 static b8
-_main_arg_to_color(const char *arg, struct img_pixel *out)
+_main_arg_to_color(const char *arg, struct img_color *out)
 {
 	dbg_assert(arg != NULL);
 	dbg_assert(out != NULL);
@@ -251,7 +251,7 @@ _main_arg_to_color(const char *arg, struct img_pixel *out)
 static void
 _main_exit_failure(void)
 {
-	if (errno != 0)  {
+	if (errno != 0 && errno != EXIT_SUCCESS)  {
 		perror("usg");
 		exit(errno);
 	} else {

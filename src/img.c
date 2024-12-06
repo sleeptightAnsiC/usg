@@ -72,8 +72,8 @@ img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 
 			_IMG_FDUMP(u8, 'B', file);
 			_IMG_FDUMP(u8, 'M', file);
 			// The size of the BMP file in bytes (pixel array + headers) - 4 bytes
-			DBG_STATIC_ASSERT(sizeof(struct img_pixel) == sizeof(u32));
-			size_t bmpsize = width * height * sizeof(struct img_pixel) + HDRSIZE + DIBSIZE;
+			DBG_STATIC_ASSERT(sizeof(struct img_color) == sizeof(u32));
+			size_t bmpsize = width * height * sizeof(struct img_color) + HDRSIZE + DIBSIZE;
 			_IMG_FDUMP(u32, bmpsize, file);
 			// Reserved space (empty in this case, but can be anything) - 2 + 2 bytes
 			_IMG_FDUMP(u32, 0, file);
@@ -134,7 +134,7 @@ img_deinit(struct img_context *ctx)
 }
 
 void
-img_write(struct img_context *ctx, struct img_pixel px)
+img_write(struct img_context *ctx, struct img_color col)
 {
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_height * ctx->_width > ctx->_pixels);
@@ -146,16 +146,16 @@ img_write(struct img_context *ctx, struct img_pixel px)
 		_IMG_FPRINTF(
 			ctx->_file,
 			"%"PRIu8" %"PRIu8" %"PRIu8"\n",
-			px.r,
-			px.g,
-			px.b);
-		(void)px.a;
+			col.r,
+			col.g,
+			col.b);
+		(void)col.a;
 		break;
 	case IMG_TYPE_BMP:
-		_IMG_FDUMP(u8, px.b, ctx->_file);
-		_IMG_FDUMP(u8, px.g, ctx->_file);
-		_IMG_FDUMP(u8, px.r, ctx->_file);
-		_IMG_FDUMP(u8, px.a, ctx->_file);
+		_IMG_FDUMP(u8, col.b, ctx->_file);
+		_IMG_FDUMP(u8, col.g, ctx->_file);
+		_IMG_FDUMP(u8, col.r, ctx->_file);
+		_IMG_FDUMP(u8, col.a, ctx->_file);
 		break;
 	case IMG_TYPE_INVALID:
 	default:
