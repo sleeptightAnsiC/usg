@@ -48,6 +48,8 @@ struct img_color {
 };
 
 struct img_context {
+	// TODO: _pixels is used for debuging purpose
+	// so this should be stripped in release build
 	u64 _pixels;
 	FILE *const _file;
 	const u32 _width;
