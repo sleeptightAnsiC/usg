@@ -251,7 +251,8 @@ _main_arg_to_color(const char *arg, struct img_color *out)
 static void
 _main_exit_failure(void)
 {
-	if (errno != 0 && errno != EXIT_SUCCESS)  {
+	if (errno != 0)  {
+		dbg_assert(errno != EXIT_SUCCESS);
 		perror("usg");
 		exit(errno);
 	} else {
