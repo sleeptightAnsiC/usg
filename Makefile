@@ -14,6 +14,11 @@ BINDIR = ./bin/$(CC)
 SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c,$(TMPDIR)/%.o,$(SRCS))
 EXE = $(BINDIR)/$(shell basename $$(pwd))
+ifeq ($(OS),Windows_NT)
+	EXE = $(BINDIR)/$(shell basename $$(pwd)).exe
+else
+	EXE = $(BINDIR)/$(shell basename $$(pwd))
+endif
 
 # CFLAGS = @$(RCPDIR)/flags_gcc.txt
 # CFLAGS = @$(RCPDIR)/flags_clang.txt
