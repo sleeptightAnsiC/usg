@@ -2,7 +2,7 @@
 # MAKEFLAGS += --jobs=$(shell nproc)
 
 # CC = cc
-CC = gcc
+# CC = gcc
 # CC = clang
 # CC = tcc
 
@@ -15,22 +15,22 @@ SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c,$(TMPDIR)/%.o,$(SRCS))
 EXE = $(BINDIR)/$(shell basename $$(pwd))
 
-CFLAGS = @$(RCPDIR)/flags_gcc.txt
+# CFLAGS = @$(RCPDIR)/flags_gcc.txt
 # CFLAGS = @$(RCPDIR)/flags_clang.txt
 # CFLAGS = @$(RCPDIR)/flags_tcc.txt
 
-CFLAGS += -pipe -O0 -ggdb3
+# CFLAGS += -pipe -O0 -ggdb3
 # CFLAGS += -Ofast -static -s -flto -DDBG_DISABLED -DNDEBUG
 
-SANDBOX = $(shell cat $(RCPDIR)/sandbox_gdb.txt)
+# SANDBOX = $(shell cat $(RCPDIR)/sandbox_gdb.txt)
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_rr.txt)
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_perf.txt)
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_valgrind.txt)
 
 .PHONY: default
 # default: run compile_commands.json
-default: build compile_commands.json
-# default: build
+# default: build compile_commands.json
+default: build
 
 .PHONY: run
 run: build
