@@ -22,7 +22,7 @@ EXE = $(BINDIR)/$(shell basename $$(pwd))
 # CFLAGS += -pipe -O0 -ggdb3
 # CFLAGS += -Ofast -static -s -flto -DDBG_DISABLED -DNDEBUG
 
-SANDBOX = $(shell cat $(RCPDIR)/sandbox_gdb.txt)
+# SANDBOX = $(shell cat $(RCPDIR)/sandbox_gdb.txt)
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_rr.txt)
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_perf.txt)
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_valgrind.txt)
