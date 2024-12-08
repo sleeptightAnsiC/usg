@@ -147,23 +147,33 @@ main(int argc, const char *argv[])
 	if (!start_y_assigned)
 		start_y = height / 2;
 
-	struct img_context image = img_init(out, width, height, start_x, start_y, start_val, type);
+	struct img_context image;
+	if (!img_init(&image, out, width, height, start_x, start_y, start_val, type)) {
+		fprintf(stderr, "Unable to create image context!\n");
+		_main_exit_failure();
+	}
 	const u64 max = img_val_max(&image);
-	struct soe_cache *const cache = soe_init(max);
-	if (cache == NULL) {
-		fprintf(stderr, "failed to calculate Prime Numbers\n");
+	struct soe_cache cache;
+	if (!soe_init(&cache, max)) {
+		fprintf(stderr, "Failed to create Prime Numbers cache!\n");
 		_main_exit_failure();
 	}
 	for (u32 y = 0; y < height; ++y) {
 		for (u32 x = 0; x < width; ++x) {
 			const u64 val = img_val_from_coords(&image, x, y);
-			const b8 prime = soe_is_prime(cache, val);
+			const b8 prime = soe_is_prime(&cache, val);
 			const struct img_color color = prime ? fg : bg;
 			img_write(&image, color);
 		}
 	}
-	img_deinit(&image);
-	soe_deinit(cache);
+	if (!soe_deinit(&cache)) {
+		fprintf(stderr, "Failed to deinitialize Prime Numbers cache!\n");
+		_main_exit_failure();
+	}
+	if (!img_deinit(&image)) {
+		fprintf(stderr, "Unable to deinitialize image context!\n");
+		_main_exit_failure();
+	}
 
 	if (!no_stdout)
 		printf("%s\n", out);

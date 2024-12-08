@@ -16,8 +16,8 @@ struct soe_cache {
 	u8 *_data;
 };
 
-struct soe_cache * soe_init(u64 max);
-void soe_deinit(struct soe_cache *cache);
+b8 soe_init(struct soe_cache *cache, u64 max);
+b8 soe_deinit(struct soe_cache *cache);
 b8 soe_is_prime(const struct soe_cache *cache, u64 num);
 
 #endif  // _SOE_H
