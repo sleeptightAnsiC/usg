@@ -7,7 +7,7 @@
 
 
 static inline void _soe_set_compisite(struct soe_cache *cache, u64 num);
-static inline b8 _soe_is_composite(struct soe_cache *cache, u64 num);
+static inline b8 _soe_is_composite(const struct soe_cache *cache, u64 num);
 
 
 struct soe_cache *
@@ -52,7 +52,7 @@ soe_deinit(struct soe_cache *cache)
 }
 
 b8
-soe_is_prime(struct soe_cache *cache, u64 num)
+soe_is_prime(const struct soe_cache *cache, u64 num)
 {
 	dbg_assert(num > 0);
 	return (num == 2) || ((num % 2 != 0) && !_soe_is_composite(cache, num));
@@ -71,7 +71,7 @@ _soe_set_compisite(struct soe_cache *cache, u64 num)
 }
 
 static inline b8
-_soe_is_composite(struct soe_cache *cache, u64 num)
+_soe_is_composite(const struct soe_cache *cache, u64 num)
 {
 	dbg_assert(num <= cache->_cap * 8 * 2);
 	dbg_assert(num % 2 != 0);
