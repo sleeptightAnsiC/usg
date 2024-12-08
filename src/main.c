@@ -9,10 +9,23 @@
 #include "./dbg.h"
 
 
+#define _main_exit_failure(...) \
+	do { \
+		fprintf(stderr, "usg: "); \
+		fprintf(stderr, __VA_ARGS__); \
+		if (errno != 0) { \
+			dbg_assert(errno != EXIT_SUCCESS); \
+			perror("usg"); \
+			exit(errno); \
+		} else { \
+			exit(EXIT_FAILURE); \
+		} \
+	} while(0) \
+
+
 static void _main_help(void);
 static b8 _main_arg_to_u32(const char *arg, u32 *out);
 static b8 _main_arg_to_color(const char *arg, struct img_color *out);
-static void _main_exit_failure(void);
 
 
 int
@@ -64,8 +77,7 @@ main(int argc, const char *argv[])
 			} else if (!strcmp(arg, "ppm")) {
 				type = IMG_TYPE_PPM;
 			} else {
-				fprintf(stderr, "Invalid image type: %s\n", arg);
-				_main_exit_failure();
+				_main_exit_failure("Invalid image type: %s\n", arg);
 			}
 			++i;
 		} else if (!strcmp(argv[i], "--width")) {
@@ -95,19 +107,15 @@ main(int argc, const char *argv[])
 		} else if (!strcmp(argv[i], "--no-stdout")) {
 			no_stdout = true;
 		} else {
-			fprintf(stderr, "Unknown option: %s\n", argv[i]);
-			_main_exit_failure();
+			_main_exit_failure("Unknown option: %s\n", argv[i]);
 		}
 		continue;
 	missing_additional:
-		fprintf(stderr, "%s requires additional argument\n", argv[i]);
-		_main_exit_failure();
+		_main_exit_failure("%s requires additional argument\n", argv[i]);
 	invalid_num:
-		fprintf(stderr, "Size is either invalid or out of scope: %s\n", argv[i + 1]);
-		_main_exit_failure();
+		_main_exit_failure("Size is either invalid or out of scope: %s\n", argv[i + 1]);
 	invalid_color:
-		fprintf(stderr, "Invalid color format: %s\n", argv[i + 1]);
-		_main_exit_failure();
+		_main_exit_failure("Invalid color format: %s\n", argv[i + 1]);
 	}
 
 	if (out == NULL) {
@@ -130,15 +138,12 @@ main(int argc, const char *argv[])
 		const size_t len = strlen(out);
 		dbg_assert(strlen(".ppm") == 4);
 		dbg_assert(strlen(".bmp") == 4);
-		if (len > 4 && !strcmp(out + len - 4, ".bmp")) {
+		if (len > 4 && !strcmp(out + len - 4, ".bmp"))
 			type = IMG_TYPE_BMP;
-		} else if (len > 4 && !strcmp(out + len - 4, ".ppm")) {
+		else if (len > 4 && !strcmp(out + len - 4, ".ppm"))
 			type = IMG_TYPE_PPM;
-		} else {
-			fprintf(stderr, "Unable to determine file type based on its name: %s\n", out);
-			fprintf(stderr, "Try enforcing file type with: --type\n");
-			_main_exit_failure();
-		}
+		else
+			_main_exit_failure("Unable to determine file type based on its name: %s\n", out);
 	}
 
 	if (!start_x_assigned)
@@ -148,16 +153,12 @@ main(int argc, const char *argv[])
 		start_y = height / 2;
 
 	struct img_context image;
-	if (!img_init(&image, out, width, height, start_x, start_y, start_val, type)) {
-		fprintf(stderr, "Unable to create image context!\n");
-		_main_exit_failure();
-	}
+	if (!img_init(&image, out, width, height, start_x, start_y, start_val, type))
+		_main_exit_failure("Unable to create image context for %s\n", out);
 	const u64 max = img_val_max(&image);
 	struct soe_cache cache;
-	if (!soe_init(&cache, max)) {
-		fprintf(stderr, "Failed to create Prime Numbers cache!\n");
-		_main_exit_failure();
-	}
+	if (!soe_init(&cache, max))
+		_main_exit_failure("Failed to create Prime Numbers cache!\n");
 	for (u32 y = 0; y < height; ++y) {
 		for (u32 x = 0; x < width; ++x) {
 			const u64 val = img_val_from_coords(&image, x, y);
@@ -166,14 +167,10 @@ main(int argc, const char *argv[])
 			img_write(&image, color);
 		}
 	}
-	if (!soe_deinit(&cache)) {
-		fprintf(stderr, "Failed to deinitialize Prime Numbers cache!\n");
-		_main_exit_failure();
-	}
-	if (!img_deinit(&image)) {
-		fprintf(stderr, "Unable to deinitialize image context!\n");
-		_main_exit_failure();
-	}
+	if (!soe_deinit(&cache))
+		_main_exit_failure("Failed to deinitialize Prime Numbers cache!\n");
+	if (!img_deinit(&image))
+		_main_exit_failure("Unable to deinitialize image context for %s !\n", out);
 
 	if (!no_stdout)
 		printf("%s\n", out);
@@ -199,8 +196,8 @@ _main_help(void)
 	puts("                  COLOR must be in HEX format represented by exactly eight");
 	puts("                  hexidecimal symbols without any prefix (regex: [0-9a-fA-F])");
 	puts("                  Alpha channel is discarded for image types not supporting it");
-	puts("  --start-x <NUM> Screen coordinate where the spiral starts (default: width/2)");
-	puts("  --start-y <NUM> Screen coordinate where the spiral starts (default: width/2)");
+	puts("  --start-x <NUM>  X coordinate where the spiral starts (default: width/2)");
+	puts("  --start-y <NUM>  Y coordinate where the spiral starts (default: height/2)");
 	puts("                  NUM must be an OpenGL-style \"screen coordinate\",");
 	puts("                  meaning that 0:0 is in the top left corner of the image");
 	puts("  --start-val <NUM> Value that spiral uses at its starting point (default: 1)");
@@ -221,7 +218,7 @@ _main_arg_to_u32(const char *arg, u32 *out)
 		if (*arg < '0' || *arg > '9') return false;
 		if (sum == 0 && *arg == '0') continue;
 		if (sum > UINT32_MAX / 10) return false;
-		sum *= 10;
+	sum *= 10;
 		const u32 val = (u32)(*arg - '0');
 		if (UINT32_MAX - sum < val) return false;
 		sum += val;
@@ -257,16 +254,4 @@ _main_arg_to_color(const char *arg, struct img_color *out)
 	out->b = (u8)(vals[4] * 16 + vals[5]);
 	out->a = (u8)(vals[6] * 16 + vals[7]);
 	return true;
-}
-
-static void
-_main_exit_failure(void)
-{
-	if (errno != 0)  {
-		dbg_assert(errno != EXIT_SUCCESS);
-		perror("usg");
-		exit(errno);
-	} else {
-		exit(EXIT_FAILURE);
-	}
 }

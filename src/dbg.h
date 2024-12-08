@@ -41,7 +41,7 @@
 
 #define dbg_assert(COND) \
 	(void)( \
-		(errno != 0) ? \
+		(!(COND) && errno != 0) ? \
 			dbg_error("%s (errno)", strerror(errno)) \
 		: \
 			(void)0, \
