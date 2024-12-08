@@ -218,7 +218,7 @@ _main_arg_to_u32(const char *arg, u32 *out)
 		if (*arg < '0' || *arg > '9') return false;
 		if (sum == 0 && *arg == '0') continue;
 		if (sum > UINT32_MAX / 10) return false;
-	sum *= 10;
+		sum *= 10;
 		const u32 val = (u32)(*arg - '0');
 		if (UINT32_MAX - sum < val) return false;
 		sum += val;
