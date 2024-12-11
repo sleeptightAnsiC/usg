@@ -5,7 +5,6 @@
 -Wpedantic
 -Wshadow
 -Wconversion
--Warith-conversion
 -Wdate-time
 -Warray-parameter
 -Wduplicated-branches
