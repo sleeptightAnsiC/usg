@@ -9,6 +9,9 @@
 #include "./dbg.h"
 
 
+// TODO: If I ever would like to replace this macro
+// it is possible with variadic function and 'vfprintf' and 'stdarg'
+// but current solution is better for diagnostic and generally shorter.
 #define _main_exit_failure(...) \
 	do { \
 		fprintf(stderr, "usg: "); \
@@ -43,6 +46,7 @@ main(int argc, const char *argv[])
 	u32 start_y;
 	b8 start_x_assigned = false;
 	b8 start_y_assigned = false;
+	b8 faded = false;
 
 	// TODO: would be nice to support this someday:
 	// https://en.wikipedia.org/wiki/Prime_k-tuple
@@ -106,6 +110,8 @@ main(int argc, const char *argv[])
 			++i;
 		} else if (!strcmp(argv[i], "--no-stdout")) {
 			no_stdout = true;
+		} else if (!strcmp(argv[i], "--faded")) {
+			faded = true;
 		} else {
 			_main_exit_failure("Unknown option: %s\n", argv[i]);
 		}
@@ -163,7 +169,31 @@ main(int argc, const char *argv[])
 		for (u32 x = 0; x < width; ++x) {
 			const u64 val = img_val_from_coords(&image, x, y);
 			const b8 prime = soe_is_prime(&cache, val);
-			const struct img_color color = prime ? fg : bg;
+			struct img_color color;
+			if (faded) {
+				const f32 ratio = (f32)val / (f32)max;
+				const f32 ratio_fixed = (prime) ? (ratio) : (1 - ratio);
+				const struct img_color diff = {
+					.r = (fg.r > bg.r) ? (fg.r - bg.r) : (bg.r - fg.r),
+					.g = (fg.g > bg.g) ? (fg.g - bg.g) : (bg.g - fg.g),
+					.b = (fg.b > bg.b) ? (fg.b - bg.b) : (bg.b - fg.b),
+					.a = (fg.a > bg.a) ? (fg.a - bg.a) : (bg.a - fg.a),
+				};
+				const struct img_color part = {
+					.r = (u8)(ratio_fixed * (f32)diff.r),
+					.g = (u8)(ratio_fixed * (f32)diff.g),
+					.b = (u8)(ratio_fixed * (f32)diff.b),
+					.a = (u8)(ratio_fixed * (f32)diff.a),
+				};
+				color = (struct img_color){
+					.r = (fg.r > bg.r) ? (part.r + bg.r) : (fg.r + part.r),
+					.g = (fg.g > bg.g) ? (part.g + bg.g) : (fg.g + part.g),
+					.b = (fg.b > bg.b) ? (part.b + bg.b) : (fg.b + part.b),
+					.a = (fg.a > bg.a) ? (part.a + bg.a) : (fg.a + part.a),
+				};
+			} else {
+				color = prime ? fg : bg;
+			}
 			img_write(&image, color);
 		}
 	}
@@ -202,6 +232,10 @@ _main_help(void)
 	puts("                  meaning that 0:0 is in the top left corner of the image");
 	puts("  --start-val <NUM> Value that spiral uses at its starting point (default: 1)");
 	puts("  --no-stdout     Do NOT print the image path to stdout after creation");
+	puts("  --faded         Fade between background and forground colors (default: off)");
+	puts("                  Fade is calculated based on the value on spiral and");
+	puts("                  the max possible value that can occur on spiral (val/max)");
+	puts("                  Use in order to see how values are being distributed");
 	puts("  -h --help       Prints this help message and exits");
 	puts("Example:");
 	puts("  usg --out spiral.bmp --width 1024 --height 1024 --fg 00ff00ff --bg 000000ff");
