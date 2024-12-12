@@ -7,15 +7,11 @@ This project has no external dependency (besides libC itself).
 
 
 # BUILDING
-EITHER, with GNU/make on POSIX (Linux, MacOSX, MinGW, etc):
 ```sh
 $ git clone https://github.com/sleeptightAnsiC/usg.git
 $ cd usg
-$ make
-```
-OR, with any C99-capable compiler:
-```sh
-$ cc src/*.c
+$ cc src/*.c -o usg
+$ ./usg --help
 ```
 
 # REFERENCES
@@ -28,4 +24,4 @@ $ cc src/*.c
 
 # LICENSE
 Copyright holder: https://github.com/sleeptightAnsiC \
-Code under this repository is licensed under permissive MIT/X license
+Code under this repository is licensed under permissive MIT license
