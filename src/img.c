@@ -20,7 +20,10 @@
 // and writes it to FILE with fwrite. Unlike fwrite, this only takes one value.
 #define _IMG_FDUMP(TYPE, VAL, FILE) \
 	do { \
+		_Pragma("GCC diagnostic push"); \
+		_Pragma("GCC diagnostic ignored \"-Wuseless-cast\""); \
 		TYPE __val = (TYPE)(VAL); \
+		_Pragma("GCC diagnostic pop"); \
 		const size_t __result = fwrite(&__val, sizeof(__val), 1, (FILE)); \
 		dbg_assert(__result > 0); \
 		(void)__result; \
