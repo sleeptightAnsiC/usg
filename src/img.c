@@ -20,10 +20,10 @@
 // and writes it to FILE with fwrite. Unlike fwrite, this only takes one value.
 #define _IMG_FDUMP(TYPE, VAL, FILE) \
 	do { \
-		_Pragma("GCC diagnostic push"); \
-		_Pragma("GCC diagnostic ignored \"-Wuseless-cast\""); \
+		DBG_PRAGMA("GCC diagnostic push"); \
+		DBG_PRAGMA("GCC diagnostic ignored \"-Wuseless-cast\""); \
 		TYPE __val = (TYPE)(VAL); \
-		_Pragma("GCC diagnostic pop"); \
+		DBG_PRAGMA("GCC diagnostic pop"); \
 		const size_t __result = fwrite(&__val, sizeof(__val), 1, (FILE)); \
 		dbg_assert(__result > 0); \
 		(void)__result; \
@@ -136,9 +136,9 @@ img_write(struct img_context *ctx, struct img_color col)
 {
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_height * ctx->_width > ctx->_pixels);
-	DBG_CODE {
+#	ifndef DBG_DISABLED
 		ctx->_pixels += 1;
-	}
+#	endif
 	switch (ctx->_type) {
 	case IMG_TYPE_PPM:
 		_IMG_FPRINTF(
