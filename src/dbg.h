@@ -21,8 +21,14 @@
 #define _DBG_STATIC_ASSERT_1(COND,L) _DBG_STATIC_ASSERT_2(COND,L)
 #define DBG_STATIC_ASSERT(COND) _DBG_STATIC_ASSERT_1(COND,__LINE__)
 
+// TODO: I think it would be better if debug macros
+// were disabled by default, so this should be DBG_ENABLED
 #ifndef DBG_DISABLED
 
+// FIXME: this macro is problematic because
+// it often uses dbg_log/assert/etc inside of the block
+// and produces warning about unused variables
+// when compiling with DBG_DISABLED
 #define DBG_CODE \
 	if (0); else
 
