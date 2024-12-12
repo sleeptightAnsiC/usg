@@ -20,7 +20,7 @@
 
 
 #if defined(_WIN32)
-#	include <BaseTsd.h>
+#	include <basetsd.h>
 	typedef UINT64 u64;
 	typedef UINT32 u32;
 	typedef UINT16 u16;
@@ -63,6 +63,9 @@
 
 typedef float f32;
 typedef double f64;
+
+// TODO: f80 could be 'long double'
+// but I have no idea how many platforms support it
 
 
 #endif  // _TYP_H

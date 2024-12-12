@@ -3,6 +3,7 @@
 
 # CC = cc
 # CC = gcc
+# CC = musl-gcc
 # CC = clang
 # CC = tcc
 
@@ -24,7 +25,7 @@ endif
 # CFLAGS = @$(RCPDIR)/flags_clang.txt
 # CFLAGS = @$(RCPDIR)/flags_tcc.txt
 
-# CFLAGS += -pipe -O0 -ggdb3
+# CFLAGS += -pipe -Og -ggdb3 -D_FORTIFY_SOURCE=3
 # CFLAGS += -Ofast -static -s -flto -DDBG_DISABLED -DNDEBUG
 
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_gdb.txt)

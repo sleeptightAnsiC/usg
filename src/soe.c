@@ -7,27 +7,24 @@
 
 
 static inline void _soe_set_compisite(struct soe_cache *cache, u64 num);
-static inline b8 _soe_is_composite(struct soe_cache *cache, u64 num);
+static inline b8 _soe_is_composite(const struct soe_cache *cache, u64 num);
 
 
-struct soe_cache *
-soe_init(u64 max)
+b8
+soe_init(struct soe_cache *cache, u64 max)
 {
+	dbg_assert(cache != NULL);
 	dbg_assert(max >= 1);
 	dbg_assert(max <= UINT64_MAX - 1);
 	max += 1;
 
-	struct soe_cache *cache;
-
 	// HACK: allocate mem for soe_cache and soe_cache._data in one calloc call
 	// this is stupid and unnesesairy but I really wanted to try it out...
 	const u64 cap = (max / 16) + 1;
-	dbg_assert(cap <= SIZE_MAX - sizeof(struct soe_cache));
-	const size_t nmemb = (size_t)(cap + sizeof(struct soe_cache));
-	cache = calloc(nmemb, sizeof(u8));
-	if (cache == NULL) return NULL;
+	void *const data = calloc(cap, sizeof(u8));
+	if (data == NULL) return false;
 	cache->_cap = cap;
-	cache->_data = (u8*)cache + sizeof(struct soe_cache);
+	cache->_data = data;
 
 	_soe_set_compisite(cache, 1);
 	for (u64 i = 3; (i * i) < max; i += 2) {
@@ -37,22 +34,25 @@ soe_init(u64 max)
 			_soe_set_compisite(cache, p);
 	}
 
-	return cache;
+	return true;
 }
 
-void
+b8
 soe_deinit(struct soe_cache *cache)
 {
+	dbg_assert(cache != NULL);
 	DBG_CODE {
 		const size_t mem = sizeof(cache->_data[0]) * cache->_cap;
 		const f64 fmt = (f64)(mem) / 1024 / 1024 ;
 		dbg_log("Total heap size allocation for soe_cache._data : %f MiB", fmt);
+		(void)(fmt);
 	}
-	free(cache);
+	free(cache->_data);
+	return true;
 }
 
 b8
-soe_is_prime(struct soe_cache *cache, u64 num)
+soe_is_prime(const struct soe_cache *cache, u64 num)
 {
 	dbg_assert(num > 0);
 	return (num == 2) || ((num % 2 != 0) && !_soe_is_composite(cache, num));
@@ -71,7 +71,7 @@ _soe_set_compisite(struct soe_cache *cache, u64 num)
 }
 
 static inline b8
-_soe_is_composite(struct soe_cache *cache, u64 num)
+_soe_is_composite(const struct soe_cache *cache, u64 num)
 {
 	dbg_assert(num <= cache->_cap * 8 * 2);
 	dbg_assert(num % 2 != 0);

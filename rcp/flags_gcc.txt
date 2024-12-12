@@ -5,7 +5,6 @@
 -Wpedantic
 -Wshadow
 -Wconversion
--Warith-conversion
 -Wdate-time
 -Warray-parameter
 -Wduplicated-branches
@@ -41,11 +40,10 @@
 -Wanalyzer-too-complex
 -Wanalyzer-symbol-too-complex
 -Wdouble-promotion
--Wformat
--Wformat-nonliteral
--Wformat-security
+-Wformat=2
+-Wformat-overflow=2
+-Wformat-truncation=2
 -Wformat-signedness
--Wformat-y2k
 -Winit-self
 -Wjump-misses-init
 -Wlogical-op
@@ -57,9 +55,6 @@
 -Wtrivial-auto-var-init
 -Wuseless-cast
 -Wmissing-variable-declarations
--Wno-error=useless-cast
--Wno-error=missing-prototypes
--Wno-error=unused-parameter
--Wno-error=unused-variable
--Wno-error=unused-function
--Wno-error=unused-value
+-Wstringop-overflow=4
+-Wundef
+-Wstack-usage=1000000

@@ -50,17 +50,17 @@ struct img_context {
 	// TODO: _pixels is used for debuging purpose
 	// so this should be stripped in release build
 	u64 _pixels;
-	FILE *const _file;
-	const u32 _width;
-	const u32 _height;
-	const u32 _start_x;
-	const u32 _start_y;
-	const u32 _start_val;
-	const enum img_type _type;
+	FILE *_file;
+	u32 _width;
+	u32 _height;
+	u32 _start_x;
+	u32 _start_y;
+	u32 _start_val;
+	enum img_type _type;
 };
 
-struct img_context img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type type);
-void img_deinit(struct img_context *ctx);
+b8 img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type type);
+b8 img_deinit(struct img_context *ctx);
 void img_write(struct img_context *ctx, struct img_color col);
 u64 img_val_from_coords(struct img_context *ctx, u32 x, u32 y);
 u64 img_val_max(struct img_context *ctx);

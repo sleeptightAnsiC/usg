@@ -20,7 +20,10 @@
 // and writes it to FILE with fwrite. Unlike fwrite, this only takes one value.
 #define _IMG_FDUMP(TYPE, VAL, FILE) \
 	do { \
+		_Pragma("GCC diagnostic push"); \
+		_Pragma("GCC diagnostic ignored \"-Wuseless-cast\""); \
 		TYPE __val = (TYPE)(VAL); \
+		_Pragma("GCC diagnostic pop"); \
 		const size_t __result = fwrite(&__val, sizeof(__val), 1, (FILE)); \
 		dbg_assert(__result > 0); \
 		(void)__result; \
@@ -36,16 +39,13 @@
 	((VAL) * (VAL))
 
 
-struct img_context
-img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type type)
+b8
+img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type type)
 {
 	dbg_log("Opening file: %s", name);
 	FILE *const file = fopen(name , "w");
-	if (file == NULL) {
-		fprintf(stderr, "Unable to open '%s': %s\n", name, strerror(errno));
-		exit(errno);
-	}
-	struct img_context ctx = {
+	if (file == NULL) return false;
+	*ctx = (struct img_context){
 		._pixels = 0,
 		._file = file,
 		._width = width,
@@ -117,20 +117,18 @@ img_init(const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 
 		dbg_unreachable();
 	} // end default
 	} // end switch
-	return ctx;
+	return true;
 }
 
-void
+b8
 img_deinit(struct img_context *ctx)
 {
 	dbg_assert(ctx != NULL);
 	const int err = fclose(ctx->_file);
-	if (err != 0) {
-		fprintf(stderr, "Unable to close file: %s\n", strerror(errno));
-		exit(errno);
-	}
+	if (err != 0) return false;
 	dbg_assert(ctx->_height * ctx->_width == ctx->_pixels);
 	dbg_log("File closed.");
+	return true;
 }
 
 void
