@@ -45,6 +45,7 @@ soe_deinit(struct soe_cache *cache)
 		const size_t mem = sizeof(cache->_data[0]) * cache->_cap;
 		const f64 fmt = (f64)(mem) / 1024 / 1024 ;
 		dbg_log("Total heap size allocation for soe_cache._data : %f MiB", fmt);
+		(void)(fmt);
 	}
 	free(cache->_data);
 	return true;
