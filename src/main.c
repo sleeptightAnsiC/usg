@@ -50,9 +50,7 @@ main(int argc, const char *argv[])
 	// TODO: would be nice to support this someday:
 	// https://en.wikipedia.org/wiki/Prime_k-tuple
 
-	// WARN: argument parsing is done by hand which is pretty fragile
-	// the alternative would be getopt(_long) but it's not portable outside of POSIX
-	// and I don't wanna use external dependency like kimgr/getopt_port, nor implement this myself.
+	// NOTE: I cannot use getopt because it a non-standard POSIX function
 	dbg_assert(argc >= 1);
 	for (int i = 1; i < argc; ++i) {
 		if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
