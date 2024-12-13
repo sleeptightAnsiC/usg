@@ -28,7 +28,6 @@
 
 static void _main_help(void);
 static b8 _main_arg_to_u32(const char *arg, u32 *out);
-static b8 _main_arg_to_color(const char *arg, struct img_color *out);
 
 
 int
@@ -62,12 +61,12 @@ main(int argc, const char *argv[])
 		} else if (!strcmp(argv[i], "--fg")) {
 			if (i + 1 == argc) goto missing_additional;
 			const char *arg = argv[i + 1];
-			if (!_main_arg_to_color(arg, &fg)) goto invalid_color;
+			if (!img_color_from_str(&fg, arg)) goto invalid_color;
 			++i;
 		} else if (!strcmp(argv[i], "--bg")) {
 			if (i + 1 == argc) goto missing_additional;
 			const char *arg = argv[i + 1];
-			if (!_main_arg_to_color(arg, &bg)) goto invalid_color;
+			if (!img_color_from_str(&bg, arg)) goto invalid_color;
 			++i;
 		} else if (!strcmp(argv[i], "--out")) {
 			if (i + 1 == argc) goto missing_additional;
@@ -244,31 +243,3 @@ _main_arg_to_u32(const char *arg, u32 *out)
 	return true;
 }
 
-static b8
-_main_arg_to_color(const char *arg, struct img_color *out)
-{
-	dbg_assert(arg != NULL);
-	dbg_assert(out != NULL);
-	u8 vals[8];
-	for (int i = 0; i < 8; i += 1) {
-		DBG_STATIC_ASSERT('0' < 'A');
-		DBG_STATIC_ASSERT('A' < 'a');
-		if (arg[i] == '\0') return false;
-		if (arg[i] < '0') return false;
-		if (arg[i] > 'f') return false;
-		if (arg[i] >= 'a')
-			vals[i] = (u8)(arg[i] - 'a' + 10);
-		else if (arg[i] >= 'A')
-			vals[i] = (u8)(arg[i] - 'A' + 10);
-		else if (arg[i] >= '0')
-			vals[i] = (u8)(arg[i] - '0');
-		else
-			dbg_unreachable();
-	}
-	if (arg[8] != '\0') return false;
-	out->r = (u8)(vals[0] * 16 + vals[1]);
-	out->g = (u8)(vals[2] * 16 + vals[3]);
-	out->b = (u8)(vals[4] * 16 + vals[5]);
-	out->a = (u8)(vals[6] * 16 + vals[7]);
-	return true;
-}

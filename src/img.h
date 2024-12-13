@@ -65,5 +65,6 @@ void img_write(struct img_context *ctx, struct img_color col);
 u64 img_val_from_coords(struct img_context *ctx, u32 x, u32 y);
 u64 img_val_max(struct img_context *ctx);
 struct img_color img_color_faded(struct img_color a, struct img_color b, f32 ratio);
+b8 img_color_from_str(struct img_color *out, const char *str);
 
 #endif  // _IMG_H

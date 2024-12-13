@@ -241,3 +241,32 @@ img_color_faded(struct img_color a, struct img_color b, f32 ratio)
 	return out;
 }
 
+b8
+img_color_from_str(struct img_color *out, const char *str)
+{
+	dbg_assert(str != NULL);
+	dbg_assert(out != NULL);
+	u8 vals[8];
+	for (int i = 0; i < 8; i += 1) {
+		DBG_STATIC_ASSERT('0' < 'A');
+		DBG_STATIC_ASSERT('A' < 'a');
+		if (str[i] == '\0') return false;
+		if (str[i] < '0') return false;
+		if (str[i] > 'f') return false;
+		if (str[i] >= 'a')
+			vals[i] = (u8)(str[i] - 'a' + 10);
+		else if (str[i] >= 'A')
+			vals[i] = (u8)(str[i] - 'A' + 10);
+		else if (str[i] >= '0')
+			vals[i] = (u8)(str[i] - '0');
+		else
+			dbg_unreachable();
+	}
+	if (str[8] != '\0') return false;
+	out->r = (u8)(vals[0] * 16 + vals[1]);
+	out->g = (u8)(vals[2] * 16 + vals[3]);
+	out->b = (u8)(vals[4] * 16 + vals[5]);
+	out->a = (u8)(vals[6] * 16 + vals[7]);
+	return true;
+}
+
