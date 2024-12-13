@@ -18,8 +18,6 @@ soe_init(struct soe_cache *cache, u64 max)
 	dbg_assert(max <= UINT64_MAX - 1);
 	max += 1;
 
-	// HACK: allocate mem for soe_cache and soe_cache._data in one calloc call
-	// this is stupid and unnesesairy but I really wanted to try it out...
 	const u64 cap = (max / 16) + 1;
 	void *const data = calloc(cap, sizeof(u8));
 	if (data == NULL) return false;
