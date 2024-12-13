@@ -217,3 +217,27 @@ img_val_max(struct img_context *ctx)
 	return out;
 }
 
+struct img_color
+img_color_faded(struct img_color a, struct img_color b, f32 ratio)
+{
+	const struct img_color diff = {
+		.r = (a.r > b.r) ? (a.r - b.r) : (b.r - a.r),
+		.g = (a.g > b.g) ? (a.g - b.g) : (b.g - a.g),
+		.b = (a.b > b.b) ? (a.b - b.b) : (b.b - a.b),
+		.a = (a.a > b.a) ? (a.a - b.a) : (b.a - a.a),
+	};
+	const struct img_color part = {
+		.r = (u8)(ratio * (f32)diff.r),
+		.g = (u8)(ratio * (f32)diff.g),
+		.b = (u8)(ratio * (f32)diff.b),
+		.a = (u8)(ratio * (f32)diff.a),
+	};
+	const struct img_color out = (struct img_color){
+		.r = (a.r > b.r) ? (part.r + b.r) : (a.r + part.r),
+		.g = (a.g > b.g) ? (part.g + b.g) : (a.g + part.g),
+		.b = (a.b > b.b) ? (part.b + b.b) : (a.b + part.b),
+		.a = (a.a > b.a) ? (part.a + b.a) : (a.a + part.a),
+	};
+	return out;
+}
+

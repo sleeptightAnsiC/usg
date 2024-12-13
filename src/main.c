@@ -159,10 +159,10 @@ main(int argc, const char *argv[])
 		start_y = height / 2;
 
 	struct img_context image;
+	struct soe_cache cache;
 	if (!img_init(&image, out, width, height, start_x, start_y, start_val, type))
 		_main_exit_failure("Unable to create image context for %s\n", out);
 	const u64 max = img_val_max(&image);
-	struct soe_cache cache;
 	if (!soe_init(&cache, max))
 		_main_exit_failure("Failed to create Prime Numbers cache!\n");
 	for (u32 y = 0; y < height; ++y) {
@@ -173,24 +173,7 @@ main(int argc, const char *argv[])
 			if (faded) {
 				const f32 ratio = (f32)val / (f32)max;
 				const f32 ratio_fixed = (prime) ? (ratio) : (1 - ratio);
-				const struct img_color diff = {
-					.r = (fg.r > bg.r) ? (fg.r - bg.r) : (bg.r - fg.r),
-					.g = (fg.g > bg.g) ? (fg.g - bg.g) : (bg.g - fg.g),
-					.b = (fg.b > bg.b) ? (fg.b - bg.b) : (bg.b - fg.b),
-					.a = (fg.a > bg.a) ? (fg.a - bg.a) : (bg.a - fg.a),
-				};
-				const struct img_color part = {
-					.r = (u8)(ratio_fixed * (f32)diff.r),
-					.g = (u8)(ratio_fixed * (f32)diff.g),
-					.b = (u8)(ratio_fixed * (f32)diff.b),
-					.a = (u8)(ratio_fixed * (f32)diff.a),
-				};
-				color = (struct img_color){
-					.r = (fg.r > bg.r) ? (part.r + bg.r) : (fg.r + part.r),
-					.g = (fg.g > bg.g) ? (part.g + bg.g) : (fg.g + part.g),
-					.b = (fg.b > bg.b) ? (part.b + bg.b) : (fg.b + part.b),
-					.a = (fg.a > bg.a) ? (part.a + bg.a) : (fg.a + part.a),
-				};
+				color = img_color_faded(fg, bg, ratio_fixed);
 			} else {
 				color = prime ? fg : bg;
 			}
