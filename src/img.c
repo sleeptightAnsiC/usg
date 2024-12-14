@@ -27,18 +27,18 @@ DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == C
 	do { \
 		CCL_PRAGMA("GCC diagnostic push"); \
 		CCL_PRAGMA("GCC diagnostic ignored \"-Wuseless-cast\""); \
-		TYPE __val = (TYPE)(VAL); \
+		TYPE val__ = (TYPE)(VAL); \
 		if (CCL_ENDIAN_ORDER != (WHAT_ENDIAN)) { \
-			TYPE __out = 0; \
-			u8 *__reinterpret = (u8 *)&__val; \
-			for (size_t i = 0; i < sizeof(TYPE); ++i) { \
-				__out |= (TYPE)__reinterpret[i] << (sizeof(TYPE) - 1) * 8; \
+			TYPE out__ = 0; \
+			u8 *reinterpret__ = (u8 *)&val__; \
+			for (size_t i__ = 0; i__ < sizeof(TYPE); ++i__) { \
+				out__ |= (TYPE)reinterpret__[i__] << (sizeof(TYPE) - 1) * 8; \
 			} \
-			__val =__out; \
+			val__ = out__; \
 		} \
-		const size_t __result = fwrite(&__val, sizeof(__val), 1, (FILE)); \
-		dbg_assert(__result > 0); \
-		(void)__result; \
+		const size_t result__ = fwrite(&val__, sizeof(val__), 1, (FILE)); \
+		dbg_assert(result__ > 0); \
+		(void)result__; \
 		CCL_PRAGMA("GCC diagnostic pop"); \
 	} while (0) \
 
