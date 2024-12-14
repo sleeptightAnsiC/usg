@@ -11,7 +11,7 @@
 
 
 // WARN: this code supports only systems with Little and Big Endians
-// It will break on something like PDP Endian byte order!
+// _IMG_FDUMP_ENDIAN will break on something like PDP Endian byte order!
 // Some image types require Little and some Big Endian so we need to ensure this.
 DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == CCL_ENDIAN_BIG);
 

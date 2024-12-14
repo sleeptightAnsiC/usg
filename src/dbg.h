@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include "./ccl.h"
 
 /* DBG
  * Debugging utilities
@@ -62,14 +63,7 @@
 #define dbg_error(...) ((void)0)
 #define dbg_warn(...) ((void)0)
 #define dbg_assert(COND) ((void)0)
-
-#if defined(__GNUC__)
-	#define dbg_unreachable() __builtin_unreachable()
-#elif defined(_MSC_VER)
-	#define dbg_unreachable() __assume(0)
-#else
-	#define dbg_unreachable() ((void)0)
-#endif
+#define dbg_unreachable() ccl_unreachable()
 
 #endif  // DBG_DISABLED
 

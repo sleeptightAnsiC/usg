@@ -66,4 +66,18 @@
 #endif
 
 
+#if defined(__GNUC__)
+	#define ccl_unreachable() __builtin_unreachable()
+#elif defined(_MSC_VER)
+	#define ccl_unreachable() __assume(0)
+#elif defined(__TINYC__)
+	// TCC does not care about optimization
+	// so it's fine to silently define dummy here
+	#define ccl_unreachable() ((void)0)
+#else
+	#define ccl_unreachable() ((void)0)
+	#warning "unable to determine ccl_unreachable !"
+#endif
+
+
 #endif  // _CCL_H
