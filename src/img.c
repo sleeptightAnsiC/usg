@@ -6,7 +6,14 @@
 #include <string.h>
 #include "./img.h"
 #include "./dbg.h"
+#include "./ccl.h"
 #include "./typ.h"
+
+
+// WARN: this code supports only systems with Little and Big Endians
+// It will break on something like PDP Endian byte order!
+// Some image types require Little and some Big Endian so we need to ensure this.
+DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == CCL_ENDIAN_BIG);
 
 
 #define _IMG_FPRINTF(...) \
@@ -16,18 +23,30 @@
 		(void)__result; \
 	} while (0) \
 
-// Takes VAL, stores it as TYPE (type coersion/conversion is expected)
-// and writes it to FILE with fwrite. Unlike fwrite, this only takes one value.
-#define _IMG_FDUMP(TYPE, VAL, FILE) \
+#define _IMG_FDUMP_ENDIAN(TYPE, VAL, FILE, WHAT_ENDIAN) \
 	do { \
-		DBG_PRAGMA("GCC diagnostic push"); \
-		DBG_PRAGMA("GCC diagnostic ignored \"-Wuseless-cast\""); \
+		CCL_PRAGMA("GCC diagnostic push"); \
+		CCL_PRAGMA("GCC diagnostic ignored \"-Wuseless-cast\""); \
 		TYPE __val = (TYPE)(VAL); \
-		DBG_PRAGMA("GCC diagnostic pop"); \
+		if (CCL_ENDIAN_ORDER != (WHAT_ENDIAN)) { \
+			TYPE __out = 0; \
+			u8 *__reinterpret = (u8 *)&__val; \
+			for (size_t i = 0; i < sizeof(TYPE); ++i) { \
+				__out |= (TYPE)__reinterpret[i] << (sizeof(TYPE) - 1) * 8; \
+			} \
+			__val =__out; \
+		} \
 		const size_t __result = fwrite(&__val, sizeof(__val), 1, (FILE)); \
 		dbg_assert(__result > 0); \
 		(void)__result; \
+		CCL_PRAGMA("GCC diagnostic pop"); \
 	} while (0) \
+
+#define _IMG_FDUMP_LE(TYPE, VAL, FILE) \
+	_IMG_FDUMP_ENDIAN(TYPE, VAL, FILE, CCL_ENDIAN_LITTLE) \
+
+#define _IMG_FDUMP_BE(TYPE, VAL, FILE) \
+	_IMG_FDUMP_ENDIAN(TYPE, VAL, FILE, CCL_ENDIAN_BIG) \
 
 #define _img_max(A, B) \
 	((A) > (B) ? (A) : (B))
@@ -69,16 +88,16 @@ img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 s
 		const u8 DIBSIZE = 40; // size of DIB header
 		{  // file header
 			// BMP Identifier ("BM") - 2 bytes
-			_IMG_FDUMP(u8, 'B', file);
-			_IMG_FDUMP(u8, 'M', file);
+			_IMG_FDUMP_LE(u8, 'B', file);
+			_IMG_FDUMP_LE(u8, 'M', file);
 			// The size of the BMP file in bytes (pixel array + headers) - 4 bytes
 			DBG_STATIC_ASSERT(sizeof(struct img_color) == sizeof(u32));
 			size_t bmpsize = width * height * sizeof(struct img_color) + HDRSIZE + DIBSIZE;
-			_IMG_FDUMP(u32, bmpsize, file);
+			_IMG_FDUMP_LE(u32, bmpsize, file);
 			// Reserved space (empty in this case, but can be anything) - 2 + 2 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 			// Starting adress of the pixel array - 4 bytes
-			_IMG_FDUMP(u32, HDRSIZE + DIBSIZE, file);
+			_IMG_FDUMP_LE(u32, HDRSIZE + DIBSIZE, file);
 		}
 		// FIXME: bmp uses int32_t (Windows' signed intiger) to store height/width but
 		// representation of said int may not be portable as it should always be little endian (Intel) byte order
@@ -86,31 +105,93 @@ img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 s
 		// https://stackoverflow.com/questions/37368273/how-to-set-an-negative-value-to-the-resolution-of-a-bmp-image-in-hex
 		{  // DIB header BITMAPINFOHEADER
 			// the size of this header, in bytes (40) - 4 bytes
-			_IMG_FDUMP(u32, DIBSIZE, file);
+			_IMG_FDUMP_LE(u32, DIBSIZE, file);
 			// the bitmap width in pixels (signed integer) - 4 bytes
 			dbg_assert(width < INT32_MAX);
-			_IMG_FDUMP(i32, (i32)width, file);
+			_IMG_FDUMP_LE(i32, (i32)width, file);
 			// the bitmap height in pixels (signed integer) - 4 bytes
 			dbg_assert(height < INT32_MAX);
-			_IMG_FDUMP(i32, (i32)height, file);
+			_IMG_FDUMP_LE(i32, (i32)height, file);
 			// the number of color planes (must be 1) - 2 bytes
-			_IMG_FDUMP(u16, 1, file);
+			_IMG_FDUMP_LE(u16, 1, file);
 			// the number of bits per pixel, which is the color depth of the image - 2 bytes
-			_IMG_FDUMP(u16, 32, file);
+			_IMG_FDUMP_LE(u16, 32, file);
 			// the compression method being used (0 for BI_RGB which stands for no compression) - 4 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 			// the image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps. - 4 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 			// FIXME: I'm not sure what the next two do but checked in stb_image and it sets them to 0
 			// the horizontal resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			_IMG_FDUMP(i32, 0, file);
+			_IMG_FDUMP_LE(i32, 0, file);
 			// the vertical resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			_IMG_FDUMP(i32, 0, file);
+			_IMG_FDUMP_LE(i32, 0, file);
 			// the number of colors in the color palette, or 0 to default to 2n - 4 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 			// the number of important colors used, or 0 when every color is important; generally ignored - 4 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 		}
+		break;
+	} case IMG_TYPE_PNG: {
+		{  // file header
+			// Has the high bit set to detect transmission systems that do not support 8-bit data
+			// and to reduce the chance that a text file is mistakenly interpreted as a PNG, or vice versa.
+			_IMG_FDUMP_BE(u8, 0x89, file);
+			// In ASCII, the letters PNG, allowing a person to identify the format easily if it is viewed in a text editor.
+			_IMG_FDUMP_BE(u8, 'P', file);
+			_IMG_FDUMP_BE(u8, 'N', file);
+			_IMG_FDUMP_BE(u8, 'G', file);
+			// A DOS-style line ending (CRLF) to detect DOS-Unix line ending conversion of the data.
+			_IMG_FDUMP_BE(u8, 0x0D, file);
+			_IMG_FDUMP_BE(u8, 0x0A, file);
+			// A byte that stops display of the file under DOS when the command type has been used—the end-of-file character.
+			_IMG_FDUMP_BE(u8, 0x1A, file);
+			// A Unix-style line ending (LF) to detect Unix-DOS line ending conversion.
+			_IMG_FDUMP_BE(u8, 0x0A, file);
+		}
+		{ // IHDR chunk
+			// Length (4 bytes, 13)
+			_IMG_FDUMP_BE(u32, 13, file);
+			// Chunk type (4 bytes, IHDR in ASCII)
+			_IMG_FDUMP_BE(u8, 'I', file);
+			_IMG_FDUMP_BE(u8, 'H', file);
+			_IMG_FDUMP_BE(u8, 'D', file);
+			_IMG_FDUMP_BE(u8, 'R', file);
+			// Chunk data (Lenght bytes)
+			{  // IHDR chunk data
+				// width (4 bytes)
+				_IMG_FDUMP_BE(u32, width, file);
+				// height (4 bytes)
+				_IMG_FDUMP_BE(u32, height, file);
+				// bit depth (1 byte, 8 for 8-bits per each channel)"
+				_IMG_FDUMP_BE(u8, 8, file);
+				// color type (1 byte, 6 for "Truecolor and alpha")
+				_IMG_FDUMP_BE(u8, 6, file);
+				// compression method (1 byte, 0 for no compression)
+				_IMG_FDUMP_BE(u8, 0, file);
+				// filter method (1 byte, 0 for no filtering)
+				_IMG_FDUMP_BE(u8, 0, file);
+				// interlace method (1 byte, 0 for "no interlace")
+				_IMG_FDUMP_BE(u8, 0, file);
+			}
+			// CRC (4 bytes)
+			// FIXME: CRC-32 calculation (for now set to 0 as placeholder)
+			// https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks
+			dbg_warn("FIXME: CRC-32 calculation for .PNG");
+			_IMG_FDUMP_BE(u32, 0, file);
+		}
+		{ // IDAT chunk (only beginning)
+			// Length (4 bytes, 12)
+			dbg_assert(width <= UINT32_MAX / height);
+			const u32 length = width * height;
+			_IMG_FDUMP_BE(u32, length, file);
+			// Chunk type (4 bytes, IDAT in ASCII)
+			_IMG_FDUMP_BE(u8, 'I', file);
+			_IMG_FDUMP_BE(u8, 'D', file);
+			_IMG_FDUMP_BE(u8, 'A', file);
+			_IMG_FDUMP_BE(u8, 'T', file);
+			// NOTE: the rest of IDAT chunk is filled in img_write and img_deinit
+		}
+		// NOTE: IEND chunk is filled in img_deinit
 		break;
 	} case IMG_TYPE_INVALID: {
 	} default: {
@@ -124,9 +205,32 @@ b8
 img_deinit(struct img_context *ctx)
 {
 	dbg_assert(ctx != NULL);
+	dbg_assert(ctx->_height * ctx->_width == ctx->_pixels);
+	if (ctx->_type == IMG_TYPE_PNG) {
+		{ // IDAT chunk (only the very end)
+			// CRC (4 bytes)
+			// FIXME: CRC-32 calculation (for now set to 0 as placeholder)
+			// https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks
+			dbg_warn("FIXME: CRC-32 calculation for .PNG");
+			_IMG_FDUMP_BE(u32, 0, ctx->_file);
+		}
+		{ // IEND chunk
+			// Length (4 bytes, 0 for empty)
+			_IMG_FDUMP_BE(u32, 0, ctx->_file);
+			// Chunk type (4 bytes, IEND in ASCII)
+			_IMG_FDUMP_BE(u8, 'I', ctx->_file);
+			_IMG_FDUMP_BE(u8, 'E', ctx->_file);
+			_IMG_FDUMP_BE(u8, 'N', ctx->_file);
+			_IMG_FDUMP_BE(u8, 'D', ctx->_file);
+			// CRC (4 bytes)
+			// FIXME: CRC-32 calculation (for now set to 0 as placeholder)
+			// https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks
+			dbg_warn("FIXME: CRC-32 calculation for .PNG");
+			_IMG_FDUMP_BE(u32, 0, ctx->_file);
+		}
+	}
 	const int err = fclose(ctx->_file);
 	if (err != 0) return false;
-	dbg_assert(ctx->_height * ctx->_width == ctx->_pixels);
 	dbg_log("File closed.");
 	return true;
 }
@@ -136,9 +240,6 @@ img_write(struct img_context *ctx, struct img_color col)
 {
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_height * ctx->_width > ctx->_pixels);
-#	ifndef DBG_DISABLED
-		ctx->_pixels += 1;
-#	endif
 	switch (ctx->_type) {
 	case IMG_TYPE_PPM:
 		_IMG_FPRINTF(
@@ -150,15 +251,26 @@ img_write(struct img_context *ctx, struct img_color col)
 		(void)col.a;
 		break;
 	case IMG_TYPE_BMP:
-		_IMG_FDUMP(u8, col.b, ctx->_file);
-		_IMG_FDUMP(u8, col.g, ctx->_file);
-		_IMG_FDUMP(u8, col.r, ctx->_file);
-		_IMG_FDUMP(u8, col.a, ctx->_file);
+		_IMG_FDUMP_LE(u8, col.b, ctx->_file);
+		_IMG_FDUMP_LE(u8, col.g, ctx->_file);
+		_IMG_FDUMP_LE(u8, col.r, ctx->_file);
+		_IMG_FDUMP_LE(u8, col.a, ctx->_file);
+		break;
+	case IMG_TYPE_PNG:
+		// NOTE: this order of channels already applies proper Endian
+		_IMG_FDUMP_BE(u8, col.b, ctx->_file);
+		_IMG_FDUMP_BE(u8, col.g, ctx->_file);
+		_IMG_FDUMP_BE(u8, col.r, ctx->_file);
+		_IMG_FDUMP_BE(u8, col.a, ctx->_file);
+		// FIXME: CRC-32 calculation
 		break;
 	case IMG_TYPE_INVALID:
 	default:
 		dbg_unreachable();
 	}
+#	ifndef DBG_DISABLED
+		ctx->_pixels += 1;
+#	endif
 }
 
 u64

@@ -37,6 +37,7 @@ enum img_type {
 	IMG_TYPE_INVALID,
 	IMG_TYPE_PPM,
 	IMG_TYPE_BMP,
+	IMG_TYPE_PNG,
 };
 
 struct img_color {

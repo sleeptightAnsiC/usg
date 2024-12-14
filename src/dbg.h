@@ -73,14 +73,6 @@
 
 #endif  // DBG_DISABLED
 
-// NOTE: this is a workaround for TCC as it does not support _Pragma
-// https://lists.nongnu.org/archive/html/tinycc-devel/2024-12/msg00009.html
-#if defined(__TINYC__)
-#	define DBG_PRAGMA(...)
-#else
-#	define DBG_PRAGMA(...) _Pragma(__VA_ARGS__)
-#endif
-
 #endif //DBG_H
 
 
