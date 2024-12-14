@@ -43,6 +43,8 @@
 #elif defined(_MSC_VER)
 	// MSVC does NOT predefine anything about Endianess
 	// and this compiler only suports targets with Little Endian
+	// even MSVC's STL hardcodes it to always be Little Endian
+	// https://github.com/microsoft/STL/blob/7643c270e5bfb1cfad62f8b5ff4045c662bdaf81/stl/inc/bit#L230
 	#define CCL_ENDIAN_ORDER CCL_ENDIAN_LITTLE
 #else
 	#error "Unable to deremine CCL_ENDIAN_ORDER !"
