@@ -123,6 +123,9 @@ main(int argc, const char *argv[])
 		_main_exit_failure("Invalid color format: %s\n", argv[i + 1]);
 	}
 
+	// FIXME: remove this after implementing PNG
+	out = "a.png";
+
 	if (out == NULL) {
 		switch (type) {
 		case IMG_TYPE_INVALID:

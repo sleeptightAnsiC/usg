@@ -64,11 +64,11 @@
 #define dbg_assert(COND) ((void)0)
 
 #if defined(__GNUC__)
-#	define dbg_unreachable() __builtin_unreachable()
+	#define dbg_unreachable() __builtin_unreachable()
 #elif defined(_MSC_VER)
-#	define dbg_unreachable() __assume(0)
+	#define dbg_unreachable() __assume(0)
 #else
-#	define dbg_unreachable() ((void)0)
+	#define dbg_unreachable() ((void)0)
 #endif
 
 #endif  // DBG_DISABLED

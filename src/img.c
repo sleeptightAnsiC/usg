@@ -268,9 +268,9 @@ img_write(struct img_context *ctx, struct img_color col)
 	default:
 		dbg_unreachable();
 	}
-#	ifndef DBG_DISABLED
+	#ifndef DBG_DISABLED
 		ctx->_pixels += 1;
-#	endif
+	#endif
 }
 
 u64
