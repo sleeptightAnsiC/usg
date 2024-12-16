@@ -15,6 +15,7 @@ BINDIR = ./bin/$(CC)
 SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c,$(TMPDIR)/%.o,$(SRCS))
 EXE = $(BINDIR)/$(shell basename $$(pwd))
+# TODO: This should append $(EXE) in case of Windows_NT instead of having two branches
 ifeq ($(OS),Windows_NT)
 	EXE = $(BINDIR)/$(shell basename $$(pwd)).exe
 else
@@ -33,44 +34,41 @@ endif
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_perf.txt)
 # SANDBOX = $(shell cat $(RCPDIR)/sandbox_valgrind.txt)
 
-.PHONY: default
+.PHONY:
 # default: run compile_commands.json
 # default: build compile_commands.json
 default: build
 
-.PHONY: run
+.PHONY:
 run: build
 	@echo "Running $(EXE) ..."
 	@$(SANDBOX) $(EXE)
 
-.PHONY: build
+.PHONY:
 build: $(EXE)
 
-.PHONY: clean
+.PHONY:
 clean:
 	@echo "Cleaning ..."
 	@rm -frv $(shell cat .gitignore)
 
 
-.PHONY: always
+.PHONY:
 always: ;
 
 $(EXE): $(TMPDIR)/Makefile.mk always $(BINDIR) $(TMPDIR)
 	@echo "Building $@ ..."
 	@$(MAKE) CC='$(CC)' CFLAGS='$(CFLAGS)' EXE='$(EXE)' --file='$<' --no-print-directory
 
-# TODO: '|| (rm $@ && exit 1)' is a bit ugly but we have to use it
-#       because tcc does not support gcc's '-MT'
-#       Maybe it would be nice to contribute '-MT' to tcc someday!
-# FIXME: I think I missunderstood '-MT' with '-MF'
-.PRECIOUS: $(TMPDIR)/%.mk
+.DELETE_ON_ERROR:
 $(TMPDIR)/%.mk: $(SRCDIR)/%.c | $(TMPDIR)
 	@echo "Creating $@ ..."
 	@printf "$(TMPDIR)/" > $@
-	@$(CC) $(CFLAGS) -MM $< >> $@ || (rm $@ && exit 1)
+	@$(CC) $(CFLAGS) -MM $< >> $@
 	@echo "	@echo \"	Compiling \$$@ ...\"" >> $@
 	@echo "	@\$$(CC) \$$(CFLAGS) -c \$$< -o \$$@" >> $@
 
+.DELETE_ON_ERROR:
 $(TMPDIR)/Makefile.mk: $(patsubst $(SRCDIR)/%.c,$(TMPDIR)/%.mk,$(SRCS)) | $(TMPDIR)
 	@echo "Creating $@ ..."
 	@echo "\$$(EXE): $(OBJS)" > $@
