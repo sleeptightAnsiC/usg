@@ -10,11 +10,30 @@
 #include "./typ.h"
 
 
-// WARN: this code supports only systems with Little and Big Endians
-// _IMG_FDUMP_ENDIAN will break on something like PDP Endian byte order!
-// Some image types require Little and some Big Endian so we need to ensure this.
-DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == CCL_ENDIAN_BIG);
+// TODO: would be nice to precompute this and embed it into code itself
+static u32 _img_png_crc_table[256];
+static b8 _img_png_crc_computed = false;
+static const u32 _IMG_PNG_CRC_DEFAULT = 0xFFFFFFFF;
 
+// NOTE: this for sure works! I compared it with:
+// https://github.com/nothings/stb/blob/5c205738c191bcb0abc65c4febfa9bd25ff35234/stb_image_write.h#L1029-L1063
+static void _img_png_crc_compute(void)
+{
+	// Taken from public example: https://www.w3.org/TR/png/#D-CRCAppendix
+	dbg_assert(!_img_png_crc_computed);
+	for (u32 n = 0; n < 256; ++n) {
+		u32 c = n;
+		for (u32 k = 0; k < 8; ++k) {
+			if (c & 1)
+				c = 0xEDB88320 ^ (c >> 1);
+			else
+				c = c >> 1;
+		}
+		// dbg_log("_img_png_crc_table[%"PRIu32"] == 0x%"PRIx32, n, c);
+		_img_png_crc_table[n] = c;
+	}
+	_img_png_crc_computed = true;
+}
 
 #define _IMG_FPRINTF(...) \
 	do { \
@@ -23,6 +42,13 @@ DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == C
 		(void)__result; \
 	} while (0) \
 
+// WARN: _IMG_FDUMP_ENDIAN supports only systems with Little and Big Endians
+DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == CCL_ENDIAN_BIG);
+
+// Dumps value into the file with fwrite
+// this macro also flips bytes in case file requires Endian different than the one being used
+// This macro is not being used directly, it only exists as helper for:
+// _IMG_FDUMP_LE _IMG_FDUMP_BE and _IMG_FDUMP_BE_CRC
 #define _IMG_FDUMP_ENDIAN(TYPE, VAL, FILE, WHAT_ENDIAN) \
 	do { \
 		CCL_PRAGMA("GCC diagnostic push"); \
@@ -30,10 +56,8 @@ DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == C
 		TYPE val__ = (TYPE)(VAL); \
 		if (CCL_ENDIAN_ORDER != (WHAT_ENDIAN)) { \
 			TYPE out__ = 0; \
-			u8 *reinterpret__ = (u8 *)&val__; \
-			for (size_t i__ = 0; i__ < sizeof(TYPE); ++i__) { \
-				out__ |= (TYPE)reinterpret__[i__] << (sizeof(TYPE) - 1) * 8; \
-			} \
+			for (size_t i__ = 0; i__ < sizeof(TYPE); ++i__) \
+				out__ |= (TYPE)((val__ >> (i__ * 8)) & 0xFF) << ((sizeof(TYPE) - 1 - i__) * 8); \
 			val__ = out__; \
 		} \
 		const size_t result__ = fwrite(&val__, sizeof(val__), 1, (FILE)); \
@@ -42,11 +66,34 @@ DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == C
 		CCL_PRAGMA("GCC diagnostic pop"); \
 	} while (0) \
 
+// Dumps value into the file ensuring that Little Endian is being used
 #define _IMG_FDUMP_LE(TYPE, VAL, FILE) \
 	_IMG_FDUMP_ENDIAN(TYPE, VAL, FILE, CCL_ENDIAN_LITTLE) \
 
+// Dumps value into the file ensuring that Big Endian is being used
 #define _IMG_FDUMP_BE(TYPE, VAL, FILE) \
 	_IMG_FDUMP_ENDIAN(TYPE, VAL, FILE, CCL_ENDIAN_BIG) \
+
+// Same as _IMG_FDUMP_LE but also calculates PNG's CRC-32 for dumped value
+#define _IMG_FDUMP_BE_CRC(TYPE, VAL, FILE, CRC_PTR) \
+	do { \
+		CCL_PRAGMA("GCC diagnostic push"); \
+		CCL_PRAGMA("GCC diagnostic ignored \"-Wuseless-cast\""); \
+		dbg_assert(_img_png_crc_computed); \
+		_IMG_FDUMP_BE(TYPE, VAL, FILE); \
+		TYPE val__ = (TYPE)(VAL); \
+		u32 c__ = *(CRC_PTR); \
+		u8 *const buf__ = (u8 *)&val__; \
+		/* FIXME: there should be a helper macro for flipping Endian byte order instead of a branch */ \
+		if (CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE) \
+			for (u32 n__ = sizeof(TYPE); n__ >= 1 ; --n__) \
+				c__ = _img_png_crc_table[(c__ ^ buf__[n__ - 1]) & 0xFF] ^ (c__ >> 8); \
+		else \
+			for (u32 n__ = 0; n__ < sizeof(TYPE) ; ++n__) \
+				c__ = _img_png_crc_table[(c__ ^ buf__[n__]) & 0xFF] ^ (c__ >> 8); \
+		*(CRC_PTR) = c__; \
+		CCL_PRAGMA("GCC diagnostic pop"); \
+	} while (0) \
 
 #define _img_max(A, B) \
 	((A) > (B) ? (A) : (B))
@@ -99,10 +146,6 @@ img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 s
 			// Starting adress of the pixel array - 4 bytes
 			_IMG_FDUMP_LE(u32, HDRSIZE + DIBSIZE, file);
 		}
-		// FIXME: bmp uses int32_t (Windows' signed intiger) to store height/width but
-		// representation of said int may not be portable as it should always be little endian (Intel) byte order
-		// this is also a concern with other intigers used down here. Would be nice to have some kind of static check for those.
-		// https://stackoverflow.com/questions/37368273/how-to-set-an-negative-value-to-the-resolution-of-a-bmp-image-in-hex
 		{  // DIB header BITMAPINFOHEADER
 			// the size of this header, in bytes (40) - 4 bytes
 			_IMG_FDUMP_LE(u32, DIBSIZE, file);
@@ -148,48 +191,50 @@ img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 s
 			// A Unix-style line ending (LF) to detect Unix-DOS line ending conversion.
 			_IMG_FDUMP_BE(u8, 0x0A, file);
 		}
+		_img_png_crc_compute();
 		{ // IHDR chunk
+			u32 crc = _IMG_PNG_CRC_DEFAULT;
 			// Length (4 bytes, 13)
 			_IMG_FDUMP_BE(u32, 13, file);
 			// Chunk type (4 bytes, IHDR in ASCII)
-			_IMG_FDUMP_BE(u8, 'I', file);
-			_IMG_FDUMP_BE(u8, 'H', file);
-			_IMG_FDUMP_BE(u8, 'D', file);
-			_IMG_FDUMP_BE(u8, 'R', file);
+			_IMG_FDUMP_BE_CRC(u8, 'I', file, &crc);
+			_IMG_FDUMP_BE_CRC(u8, 'H', file, &crc);
+			_IMG_FDUMP_BE_CRC(u8, 'D', file, &crc);
+			_IMG_FDUMP_BE_CRC(u8, 'R', file, &crc);
 			// Chunk data (Lenght bytes)
 			{  // IHDR chunk data
 				// width (4 bytes)
-				_IMG_FDUMP_BE(u32, width, file);
+				_IMG_FDUMP_BE_CRC(u32, width, file, &crc);
 				// height (4 bytes)
-				_IMG_FDUMP_BE(u32, height, file);
+				_IMG_FDUMP_BE_CRC(u32, height, file, &crc);
 				// bit depth (1 byte, 8 for 8-bits per each channel)"
-				_IMG_FDUMP_BE(u8, 8, file);
+				_IMG_FDUMP_BE_CRC(u8, 8, file, &crc);
 				// color type (1 byte, 6 for "Truecolor and alpha")
-				_IMG_FDUMP_BE(u8, 6, file);
+				_IMG_FDUMP_BE_CRC(u8, 6, file, &crc);
 				// compression method (1 byte, 0 for no compression)
-				_IMG_FDUMP_BE(u8, 0, file);
+				_IMG_FDUMP_BE_CRC(u8, 0, file, &crc);
 				// filter method (1 byte, 0 for no filtering)
-				_IMG_FDUMP_BE(u8, 0, file);
+				_IMG_FDUMP_BE_CRC(u8, 0, file, &crc);
 				// interlace method (1 byte, 0 for "no interlace")
-				_IMG_FDUMP_BE(u8, 0, file);
+				_IMG_FDUMP_BE_CRC(u8, 0, file, &crc);
 			}
 			// CRC (4 bytes)
-			// FIXME: CRC-32 calculation (for now set to 0 as placeholder)
-			// https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks
-			dbg_warn("FIXME: CRC-32 calculation for .PNG");
-			_IMG_FDUMP_BE(u32, 0, file);
+			_IMG_FDUMP_BE(u32, crc ^ _IMG_PNG_CRC_DEFAULT, file);
 		}
 		{ // IDAT chunk (only beginning)
-			// Length (4 bytes, 12)
-			dbg_assert(width <= UINT32_MAX / height);
-			const u32 length = width * height;
+			u32 crc = _IMG_PNG_CRC_DEFAULT;
+			// Length (4 bytes)
+			// FIXME: overflow check here...
+			// FIXME: add the value of compression bytes to the lenght
+			const u32 length = (width * 4 + 1) * height;
 			_IMG_FDUMP_BE(u32, length, file);
 			// Chunk type (4 bytes, IDAT in ASCII)
-			_IMG_FDUMP_BE(u8, 'I', file);
-			_IMG_FDUMP_BE(u8, 'D', file);
-			_IMG_FDUMP_BE(u8, 'A', file);
-			_IMG_FDUMP_BE(u8, 'T', file);
+			_IMG_FDUMP_BE_CRC(u8, 'I', file, &crc);
+			_IMG_FDUMP_BE_CRC(u8, 'D', file, &crc);
+			_IMG_FDUMP_BE_CRC(u8, 'A', file, &crc);
+			_IMG_FDUMP_BE_CRC(u8, 'T', file, &crc);
 			// NOTE: the rest of IDAT chunk is filled in img_write and img_deinit
+			ctx->_png_crc = crc;
 		}
 		// NOTE: IEND chunk is filled in img_deinit
 		break;
@@ -209,24 +254,19 @@ img_deinit(struct img_context *ctx)
 	if (ctx->_type == IMG_TYPE_PNG) {
 		{ // IDAT chunk (only the very end)
 			// CRC (4 bytes)
-			// FIXME: CRC-32 calculation (for now set to 0 as placeholder)
-			// https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks
-			dbg_warn("FIXME: CRC-32 calculation for .PNG");
-			_IMG_FDUMP_BE(u32, 0, ctx->_file);
+			_IMG_FDUMP_BE(u32, ctx->_png_crc ^ _IMG_PNG_CRC_DEFAULT, ctx->_file);
 		}
 		{ // IEND chunk
+			u32 crc = _IMG_PNG_CRC_DEFAULT;
 			// Length (4 bytes, 0 for empty)
 			_IMG_FDUMP_BE(u32, 0, ctx->_file);
 			// Chunk type (4 bytes, IEND in ASCII)
-			_IMG_FDUMP_BE(u8, 'I', ctx->_file);
-			_IMG_FDUMP_BE(u8, 'E', ctx->_file);
-			_IMG_FDUMP_BE(u8, 'N', ctx->_file);
-			_IMG_FDUMP_BE(u8, 'D', ctx->_file);
+			_IMG_FDUMP_BE_CRC(u8, 'I', ctx->_file, &crc);
+			_IMG_FDUMP_BE_CRC(u8, 'E', ctx->_file, &crc);
+			_IMG_FDUMP_BE_CRC(u8, 'N', ctx->_file, &crc);
+			_IMG_FDUMP_BE_CRC(u8, 'D', ctx->_file, &crc);
 			// CRC (4 bytes)
-			// FIXME: CRC-32 calculation (for now set to 0 as placeholder)
-			// https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks
-			dbg_warn("FIXME: CRC-32 calculation for .PNG");
-			_IMG_FDUMP_BE(u32, 0, ctx->_file);
+			_IMG_FDUMP_BE(u32, crc ^ _IMG_PNG_CRC_DEFAULT, ctx->_file);
 		}
 	}
 	const int err = fclose(ctx->_file);
@@ -241,7 +281,7 @@ img_write(struct img_context *ctx, struct img_color col)
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_height * ctx->_width > ctx->_pixels);
 	switch (ctx->_type) {
-	case IMG_TYPE_PPM:
+	case IMG_TYPE_PPM: {
 		_IMG_FPRINTF(
 			ctx->_file,
 			"%"PRIu8" %"PRIu8" %"PRIu8"\n",
@@ -250,27 +290,25 @@ img_write(struct img_context *ctx, struct img_color col)
 			col.b);
 		(void)col.a;
 		break;
-	case IMG_TYPE_BMP:
+	} case IMG_TYPE_BMP: {
 		_IMG_FDUMP_LE(u8, col.b, ctx->_file);
 		_IMG_FDUMP_LE(u8, col.g, ctx->_file);
 		_IMG_FDUMP_LE(u8, col.r, ctx->_file);
 		_IMG_FDUMP_LE(u8, col.a, ctx->_file);
 		break;
-	case IMG_TYPE_PNG:
-		// NOTE: this order of channels already applies proper Endian
-		_IMG_FDUMP_BE(u8, col.b, ctx->_file);
-		_IMG_FDUMP_BE(u8, col.g, ctx->_file);
-		_IMG_FDUMP_BE(u8, col.r, ctx->_file);
-		_IMG_FDUMP_BE(u8, col.a, ctx->_file);
-		// FIXME: CRC-32 calculation
+	} case IMG_TYPE_PNG: {
+		// There must be 0x00 for "no compression" at the beggining of each row
+		if (ctx->_pixels % ctx->_width == 0)
+			_IMG_FDUMP_BE_CRC(u8, 0x00, ctx->_file, &ctx->_png_crc);
+		DBG_STATIC_ASSERT(sizeof(struct img_color) == sizeof(u32));
+		union {struct img_color as_color; u32 as_u32;} reinterpret = {.as_color = col};
+		_IMG_FDUMP_BE_CRC(u32, reinterpret.as_u32, ctx->_file, &ctx->_png_crc);
 		break;
-	case IMG_TYPE_INVALID:
-	default:
+	} case IMG_TYPE_INVALID: {
+	} default:
 		dbg_unreachable();
 	}
-	#ifndef DBG_DISABLED
-		ctx->_pixels += 1;
-	#endif
+	ctx->_pixels += 1;
 }
 
 u64

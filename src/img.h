@@ -32,6 +32,8 @@
 
 // TODO: add .png support someday
 // https://en.wikipedia.org/wiki/PNG
+// http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html
+// https://www.w3.org/TR/png/#D-CRCAppendix
 
 enum img_type {
 	IMG_TYPE_INVALID,
@@ -48,8 +50,6 @@ struct img_color {
 };
 
 struct img_context {
-	// TODO: _pixels is used for debuging purpose
-	// so this should be stripped in release build
 	u64 _pixels;
 	FILE *_file;
 	u32 _width;
@@ -57,6 +57,7 @@ struct img_context {
 	u32 _start_x;
 	u32 _start_y;
 	u32 _start_val;
+	u32 _png_crc;
 	enum img_type _type;
 };
 
