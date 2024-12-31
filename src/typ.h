@@ -4,13 +4,6 @@
 
 
 // WARN:
-// Yes, I know that some types such as:
-//	float double bool
-// are NOT the same across all platforms
-// (in fact, every single type is `implementation-defined`)
-// and for example the size of `byte` is not always 1
-// but really, those cases are super super rare,
-// especially when running in OS user space.
 // I always expect that:
 //	sizeof(byte) == 1
 //	sizeof(_Bool) == 1
