@@ -18,7 +18,7 @@
 // https://stackoverflow.com/questions/29113768/visual-studio-determine-endianness
 //
 // This will print "Hi!" only on Little Endian machines:
-//	if (CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE) printf("Hi!");
+//	if (CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE) puts("Hi!");
 
 // same values as the ones defined by gcc-compatible compilers such as:
 // cc, clang, tcc (mob-devel), icx and other clang-derivatives
@@ -32,6 +32,7 @@
 	// __ORDER_BIG_ENDIAN__ and __ORDER_PDP_ENDIAN__ are also defined
 	#define CCL_ENDIAN_ORDER __BYTE_ORDER__
 	// TCC mob-devel seems to be missing this one single define
+	// https://lists.nongnu.org/archive/html/tinycc-devel/2024-12/msg00015.html
 	#if defined(__TINYC__) && !defined(__ORDER_PDP_ENDIAN__)
 		#define __ORDER_PDP_ENDIAN__ CCL_ENDIAN_PDP
 	#endif
