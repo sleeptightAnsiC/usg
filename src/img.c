@@ -17,19 +17,17 @@
 		(void)__result; \
 	} while (0) \
 
-// WARN: _IMG_FDUMP_ENDIAN supports only systems with Little and Big Endians
+// WARN: _IMG_FDUMP supports only systems with Little and Big Endians
 DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == CCL_ENDIAN_BIG);
 
 // Dumps value into the file with fwrite
 // this macro also flips bytes in case file requires Endian different than the one being used
-// This macro is not being used directly, it only exists as helper for:
-// _IMG_FDUMP_LE _IMG_FDUMP_BE and _IMG_FDUMP_BE_CRC
-#define _IMG_FDUMP_ENDIAN(TYPE, VAL, FILE, WHAT_ENDIAN) \
+#define _IMG_FDUMP(TYPE, VAL, FILE, ENDIANESS) \
 	do { \
 		CCL_PRAGMA("GCC diagnostic push"); \
 		CCL_PRAGMA("GCC diagnostic ignored \"-Wuseless-cast\""); \
 		TYPE val__ = (TYPE)(VAL); \
-		if (CCL_ENDIAN_ORDER != (WHAT_ENDIAN)) { \
+		if (CCL_ENDIAN_ORDER != (ENDIANESS)) { \
 			TYPE out__ = 0; \
 			for (size_t i__ = 0; i__ < sizeof(TYPE); ++i__) \
 				out__ |= (TYPE)((val__ >> (i__ * 8)) & 0xFF) << ((sizeof(TYPE) - 1 - i__) * 8); \
@@ -43,11 +41,11 @@ DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == C
 
 // Dumps value into the file ensuring that Little Endian is being used
 #define _IMG_FDUMP_LE(TYPE, VAL, FILE) \
-	_IMG_FDUMP_ENDIAN(TYPE, VAL, FILE, CCL_ENDIAN_LITTLE) \
+	_IMG_FDUMP(TYPE, VAL, FILE, CCL_ENDIAN_LITTLE) \
 
 // Dumps value into the file ensuring that Big Endian is being used
 #define _IMG_FDUMP_BE(TYPE, VAL, FILE) \
-	_IMG_FDUMP_ENDIAN(TYPE, VAL, FILE, CCL_ENDIAN_BIG) \
+	_IMG_FDUMP(TYPE, VAL, FILE, CCL_ENDIAN_BIG) \
 
 #define _img_max(A, B) \
 	((A) > (B) ? (A) : (B))
