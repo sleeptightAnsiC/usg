@@ -30,16 +30,15 @@
  *
  */
 
-// TODO: add .png support someday
-// https://en.wikipedia.org/wiki/PNG
-// http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html
-// https://www.w3.org/TR/png/#D-CRCAppendix
+// TODO: currently this unit deals with 2 problems:
+// creating an image and calculating specific values for the Ulam Spiral
+// This is quite good because those problems partially overlap
+// but since img.c becomes really big, it would be nice to split them.
 
 enum img_type {
 	IMG_TYPE_INVALID,
 	IMG_TYPE_PPM,
 	IMG_TYPE_BMP,
-	IMG_TYPE_PNG,
 };
 
 struct img_color {
@@ -50,16 +49,17 @@ struct img_color {
 };
 
 struct img_context {
-	u64 _pixels;
 	FILE *_file;
 	u32 _width;
 	u32 _height;
 	u32 _start_x;
 	u32 _start_y;
 	u32 _start_val;
-	u32 _png_crc;
 	enum img_type _type;
+	// TODO: '_pixels' member is only used for debug purpose
+	u64 _pixels;
 };
+
 
 b8 img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type type);
 b8 img_deinit(struct img_context *ctx);
@@ -68,5 +68,6 @@ u64 img_val_from_coords(struct img_context *ctx, u32 x, u32 y);
 u64 img_val_max(struct img_context *ctx);
 struct img_color img_color_faded(struct img_color a, struct img_color b, f32 ratio);
 b8 img_color_from_str(struct img_color *out, const char *str);
+
 
 #endif  // _IMG_H

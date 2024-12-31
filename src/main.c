@@ -77,8 +77,6 @@ main(int argc, const char *argv[])
 				type = IMG_TYPE_BMP;
 			} else if (!strcmp(arg, "ppm")) {
 				type = IMG_TYPE_PPM;
-			} else if (!strcmp(arg, "png")) {
-				type = IMG_TYPE_PNG;
 			} else {
 				_main_exit_failure("Invalid image type: %s\n", arg);
 			}
@@ -134,9 +132,6 @@ main(int argc, const char *argv[])
 		case IMG_TYPE_PPM:
 			out = "a.ppm";
 			break;
-		case IMG_TYPE_PNG:
-			out = "a.png";
-			break;
 		default:
 			dbg_unreachable();
 		}
@@ -148,8 +143,6 @@ main(int argc, const char *argv[])
 			type = IMG_TYPE_BMP;
 		else if (len > 4 && !strcmp(out + len - 4, ".ppm"))
 			type = IMG_TYPE_PPM;
-		else if (len > 4 && !strcmp(out + len - 4, ".png"))
-			type = IMG_TYPE_PNG;
 		else
 			_main_exit_failure("Unable to determine file type based on its name: %s\n", out);
 	}
@@ -204,7 +197,7 @@ _main_help(void)
 	puts("  --width <NUM>   Width of the image in pixels (default: 255)");
 	puts("  --height <NUM>  Height of the image in pixels (default: 255)");
 	puts("  --type <TYPE>   Type of output image file (extension)");
-	puts("                  Accepts either: 'ppm', 'bmp' or 'png'");
+	puts("                  Accepts either: 'ppm' or 'bmp'");
 	puts("                  If unset, determined automatically based on file name");
 	puts("  --out <FILE>    Name of output image file (default: 'a.bmp')");
 	puts("  --fg <COLOR>    Foreground color of the image (default: '000000ff')");
