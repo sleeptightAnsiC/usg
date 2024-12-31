@@ -6,6 +6,7 @@
 #include <string.h>
 #include "./img.h"
 #include "./dbg.h"
+#include "./ccl.h"
 #include "./typ.h"
 
 
@@ -16,18 +17,35 @@
 		(void)__result; \
 	} while (0) \
 
-// Takes VAL, stores it as TYPE (type coersion/conversion is expected)
-// and writes it to FILE with fwrite. Unlike fwrite, this only takes one value.
-#define _IMG_FDUMP(TYPE, VAL, FILE) \
+// WARN: _IMG_FDUMP supports only systems with Little and Big Endians
+DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == CCL_ENDIAN_BIG);
+
+// Dumps value into the file with fwrite
+// this macro also flips bytes in case file requires Endian different than the one being used
+#define _IMG_FDUMP(TYPE, VAL, FILE, ENDIANESS) \
 	do { \
-		_Pragma("GCC diagnostic push"); \
-		_Pragma("GCC diagnostic ignored \"-Wuseless-cast\""); \
-		TYPE __val = (TYPE)(VAL); \
-		_Pragma("GCC diagnostic pop"); \
-		const size_t __result = fwrite(&__val, sizeof(__val), 1, (FILE)); \
-		dbg_assert(__result > 0); \
-		(void)__result; \
+		CCL_PRAGMA("GCC diagnostic push"); \
+		CCL_PRAGMA("GCC diagnostic ignored \"-Wuseless-cast\""); \
+		TYPE val__ = (TYPE)(VAL); \
+		if (CCL_ENDIAN_ORDER != (ENDIANESS)) { \
+			TYPE out__ = 0; \
+			for (size_t i__ = 0; i__ < sizeof(TYPE); ++i__) \
+				out__ |= (TYPE)((val__ >> (i__ * 8)) & 0xFF) << ((sizeof(TYPE) - 1 - i__) * 8); \
+			val__ = out__; \
+		} \
+		const size_t result__ = fwrite(&val__, sizeof(val__), 1, (FILE)); \
+		dbg_assert(result__ > 0); \
+		(void)result__; \
+		CCL_PRAGMA("GCC diagnostic pop"); \
 	} while (0) \
+
+// Dumps value into the file ensuring that Little Endian is being used
+#define _IMG_FDUMP_LE(TYPE, VAL, FILE) \
+	_IMG_FDUMP(TYPE, VAL, FILE, CCL_ENDIAN_LITTLE) \
+
+// Dumps value into the file ensuring that Big Endian is being used
+#define _IMG_FDUMP_BE(TYPE, VAL, FILE) \
+	_IMG_FDUMP(TYPE, VAL, FILE, CCL_ENDIAN_BIG) \
 
 #define _img_max(A, B) \
 	((A) > (B) ? (A) : (B))
@@ -69,47 +87,43 @@ img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 s
 		const u8 DIBSIZE = 40; // size of DIB header
 		{  // file header
 			// BMP Identifier ("BM") - 2 bytes
-			_IMG_FDUMP(u8, 'B', file);
-			_IMG_FDUMP(u8, 'M', file);
+			_IMG_FDUMP_LE(u8, 'B', file);
+			_IMG_FDUMP_LE(u8, 'M', file);
 			// The size of the BMP file in bytes (pixel array + headers) - 4 bytes
 			DBG_STATIC_ASSERT(sizeof(struct img_color) == sizeof(u32));
 			size_t bmpsize = width * height * sizeof(struct img_color) + HDRSIZE + DIBSIZE;
-			_IMG_FDUMP(u32, bmpsize, file);
+			_IMG_FDUMP_LE(u32, bmpsize, file);
 			// Reserved space (empty in this case, but can be anything) - 2 + 2 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 			// Starting adress of the pixel array - 4 bytes
-			_IMG_FDUMP(u32, HDRSIZE + DIBSIZE, file);
+			_IMG_FDUMP_LE(u32, HDRSIZE + DIBSIZE, file);
 		}
-		// FIXME: bmp uses int32_t (Windows' signed intiger) to store height/width but
-		// representation of said int may not be portable as it should always be little endian (Intel) byte order
-		// this is also a concern with other intigers used down here. Would be nice to have some kind of static check for those.
-		// https://stackoverflow.com/questions/37368273/how-to-set-an-negative-value-to-the-resolution-of-a-bmp-image-in-hex
 		{  // DIB header BITMAPINFOHEADER
 			// the size of this header, in bytes (40) - 4 bytes
-			_IMG_FDUMP(u32, DIBSIZE, file);
+			_IMG_FDUMP_LE(u32, DIBSIZE, file);
 			// the bitmap width in pixels (signed integer) - 4 bytes
 			dbg_assert(width < INT32_MAX);
-			_IMG_FDUMP(i32, (i32)width, file);
+			_IMG_FDUMP_LE(i32, (i32)width, file);
 			// the bitmap height in pixels (signed integer) - 4 bytes
 			dbg_assert(height < INT32_MAX);
-			_IMG_FDUMP(i32, (i32)height, file);
+			_IMG_FDUMP_LE(i32, (i32)height, file);
 			// the number of color planes (must be 1) - 2 bytes
-			_IMG_FDUMP(u16, 1, file);
+			_IMG_FDUMP_LE(u16, 1, file);
 			// the number of bits per pixel, which is the color depth of the image - 2 bytes
-			_IMG_FDUMP(u16, 32, file);
+			_IMG_FDUMP_LE(u16, 32, file);
 			// the compression method being used (0 for BI_RGB which stands for no compression) - 4 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 			// the image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps. - 4 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 			// FIXME: I'm not sure what the next two do but checked in stb_image and it sets them to 0
 			// the horizontal resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			_IMG_FDUMP(i32, 0, file);
+			_IMG_FDUMP_LE(i32, 0, file);
 			// the vertical resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			_IMG_FDUMP(i32, 0, file);
+			_IMG_FDUMP_LE(i32, 0, file);
 			// the number of colors in the color palette, or 0 to default to 2n - 4 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 			// the number of important colors used, or 0 when every color is important; generally ignored - 4 bytes
-			_IMG_FDUMP(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, file);
 		}
 		break;
 	} case IMG_TYPE_INVALID: {
@@ -124,9 +138,9 @@ b8
 img_deinit(struct img_context *ctx)
 {
 	dbg_assert(ctx != NULL);
+	dbg_assert(ctx->_height * ctx->_width == ctx->_pixels);
 	const int err = fclose(ctx->_file);
 	if (err != 0) return false;
-	dbg_assert(ctx->_height * ctx->_width == ctx->_pixels);
 	dbg_log("File closed.");
 	return true;
 }
@@ -136,11 +150,8 @@ img_write(struct img_context *ctx, struct img_color col)
 {
 	dbg_assert(ctx != NULL);
 	dbg_assert(ctx->_height * ctx->_width > ctx->_pixels);
-	DBG_CODE {
-		ctx->_pixels += 1;
-	}
 	switch (ctx->_type) {
-	case IMG_TYPE_PPM:
+	case IMG_TYPE_PPM: {
 		_IMG_FPRINTF(
 			ctx->_file,
 			"%"PRIu8" %"PRIu8" %"PRIu8"\n",
@@ -149,16 +160,17 @@ img_write(struct img_context *ctx, struct img_color col)
 			col.b);
 		(void)col.a;
 		break;
-	case IMG_TYPE_BMP:
-		_IMG_FDUMP(u8, col.b, ctx->_file);
-		_IMG_FDUMP(u8, col.g, ctx->_file);
-		_IMG_FDUMP(u8, col.r, ctx->_file);
-		_IMG_FDUMP(u8, col.a, ctx->_file);
+	} case IMG_TYPE_BMP: {
+		_IMG_FDUMP_LE(u8, col.b, ctx->_file);
+		_IMG_FDUMP_LE(u8, col.g, ctx->_file);
+		_IMG_FDUMP_LE(u8, col.r, ctx->_file);
+		_IMG_FDUMP_LE(u8, col.a, ctx->_file);
 		break;
-	case IMG_TYPE_INVALID:
-	default:
+	} case IMG_TYPE_INVALID: {
+	} default:
 		dbg_unreachable();
 	}
+	ctx->_pixels += 1;
 }
 
 u64
@@ -215,5 +227,58 @@ img_val_max(struct img_context *ctx)
 	const u32 max = _img_max(adj_width, adj_height);
 	const u64 out = _img_pow2(max) + ctx->_start_val;
 	return out;
+}
+
+struct img_color
+img_color_faded(struct img_color a, struct img_color b, f32 ratio)
+{
+	const struct img_color diff = {
+		.r = (a.r > b.r) ? (a.r - b.r) : (b.r - a.r),
+		.g = (a.g > b.g) ? (a.g - b.g) : (b.g - a.g),
+		.b = (a.b > b.b) ? (a.b - b.b) : (b.b - a.b),
+		.a = (a.a > b.a) ? (a.a - b.a) : (b.a - a.a),
+	};
+	const struct img_color part = {
+		.r = (u8)(ratio * (f32)diff.r),
+		.g = (u8)(ratio * (f32)diff.g),
+		.b = (u8)(ratio * (f32)diff.b),
+		.a = (u8)(ratio * (f32)diff.a),
+	};
+	const struct img_color out = (struct img_color){
+		.r = (a.r > b.r) ? (part.r + b.r) : (a.r + part.r),
+		.g = (a.g > b.g) ? (part.g + b.g) : (a.g + part.g),
+		.b = (a.b > b.b) ? (part.b + b.b) : (a.b + part.b),
+		.a = (a.a > b.a) ? (part.a + b.a) : (a.a + part.a),
+	};
+	return out;
+}
+
+b8
+img_color_from_str(struct img_color *out, const char *str)
+{
+	dbg_assert(str != NULL);
+	dbg_assert(out != NULL);
+	u8 vals[8];
+	for (int i = 0; i < 8; i += 1) {
+		DBG_STATIC_ASSERT('0' < 'A');
+		DBG_STATIC_ASSERT('A' < 'a');
+		if (str[i] == '\0') return false;
+		if (str[i] < '0') return false;
+		if (str[i] > 'f') return false;
+		if (str[i] >= 'a')
+			vals[i] = (u8)(str[i] - 'a' + 10);
+		else if (str[i] >= 'A')
+			vals[i] = (u8)(str[i] - 'A' + 10);
+		else if (str[i] >= '0')
+			vals[i] = (u8)(str[i] - '0');
+		else
+			dbg_unreachable();
+	}
+	if (str[8] != '\0') return false;
+	out->r = (u8)(vals[0] * 16 + vals[1]);
+	out->g = (u8)(vals[2] * 16 + vals[3]);
+	out->b = (u8)(vals[4] * 16 + vals[5]);
+	out->a = (u8)(vals[6] * 16 + vals[7]);
+	return true;
 }
 

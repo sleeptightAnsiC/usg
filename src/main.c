@@ -28,7 +28,6 @@
 
 static void _main_help(void);
 static b8 _main_arg_to_u32(const char *arg, u32 *out);
-static b8 _main_arg_to_color(const char *arg, struct img_color *out);
 
 
 int
@@ -51,9 +50,7 @@ main(int argc, const char *argv[])
 	// TODO: would be nice to support this someday:
 	// https://en.wikipedia.org/wiki/Prime_k-tuple
 
-	// WARN: argument parsing is done by hand which is pretty fragile
-	// the alternative would be getopt(_long) but it's not portable outside of POSIX
-	// and I don't wanna use external dependency like kimgr/getopt_port, nor implement this myself.
+	// NOTE: I cannot use getopt because it a non-standard POSIX function
 	dbg_assert(argc >= 1);
 	for (int i = 1; i < argc; ++i) {
 		if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
@@ -62,12 +59,12 @@ main(int argc, const char *argv[])
 		} else if (!strcmp(argv[i], "--fg")) {
 			if (i + 1 == argc) goto missing_additional;
 			const char *arg = argv[i + 1];
-			if (!_main_arg_to_color(arg, &fg)) goto invalid_color;
+			if (!img_color_from_str(&fg, arg)) goto invalid_color;
 			++i;
 		} else if (!strcmp(argv[i], "--bg")) {
 			if (i + 1 == argc) goto missing_additional;
 			const char *arg = argv[i + 1];
-			if (!_main_arg_to_color(arg, &bg)) goto invalid_color;
+			if (!img_color_from_str(&bg, arg)) goto invalid_color;
 			++i;
 		} else if (!strcmp(argv[i], "--out")) {
 			if (i + 1 == argc) goto missing_additional;
@@ -142,8 +139,6 @@ main(int argc, const char *argv[])
 
 	if (type == IMG_TYPE_INVALID) {
 		const size_t len = strlen(out);
-		dbg_assert(strlen(".ppm") == 4);
-		dbg_assert(strlen(".bmp") == 4);
 		if (len > 4 && !strcmp(out + len - 4, ".bmp"))
 			type = IMG_TYPE_BMP;
 		else if (len > 4 && !strcmp(out + len - 4, ".ppm"))
@@ -159,10 +154,10 @@ main(int argc, const char *argv[])
 		start_y = height / 2;
 
 	struct img_context image;
+	struct soe_cache cache;
 	if (!img_init(&image, out, width, height, start_x, start_y, start_val, type))
 		_main_exit_failure("Unable to create image context for %s\n", out);
 	const u64 max = img_val_max(&image);
-	struct soe_cache cache;
 	if (!soe_init(&cache, max))
 		_main_exit_failure("Failed to create Prime Numbers cache!\n");
 	for (u32 y = 0; y < height; ++y) {
@@ -173,24 +168,7 @@ main(int argc, const char *argv[])
 			if (faded) {
 				const f32 ratio = (f32)val / (f32)max;
 				const f32 ratio_fixed = (prime) ? (ratio) : (1 - ratio);
-				const struct img_color diff = {
-					.r = (fg.r > bg.r) ? (fg.r - bg.r) : (bg.r - fg.r),
-					.g = (fg.g > bg.g) ? (fg.g - bg.g) : (bg.g - fg.g),
-					.b = (fg.b > bg.b) ? (fg.b - bg.b) : (bg.b - fg.b),
-					.a = (fg.a > bg.a) ? (fg.a - bg.a) : (bg.a - fg.a),
-				};
-				const struct img_color part = {
-					.r = (u8)(ratio_fixed * (f32)diff.r),
-					.g = (u8)(ratio_fixed * (f32)diff.g),
-					.b = (u8)(ratio_fixed * (f32)diff.b),
-					.a = (u8)(ratio_fixed * (f32)diff.a),
-				};
-				color = (struct img_color){
-					.r = (fg.r > bg.r) ? (part.r + bg.r) : (fg.r + part.r),
-					.g = (fg.g > bg.g) ? (part.g + bg.g) : (fg.g + part.g),
-					.b = (fg.b > bg.b) ? (part.b + bg.b) : (fg.b + part.b),
-					.a = (fg.a > bg.a) ? (part.a + bg.a) : (fg.a + part.a),
-				};
+				color = img_color_faded(fg, bg, ratio_fixed);
 			} else {
 				color = prime ? fg : bg;
 			}
@@ -218,7 +196,8 @@ _main_help(void)
 	puts("Options:");
 	puts("  --width <NUM>   Width of the image in pixels (default: 255)");
 	puts("  --height <NUM>  Height of the image in pixels (default: 255)");
-	puts("  --type <TYPE>   Type of output image file. Accepts either 'ppm' or 'bmp'");
+	puts("  --type <TYPE>   Type of output image file (extension)");
+	puts("                  Accepts either: 'ppm' or 'bmp'");
 	puts("                  If unset, determined automatically based on file name");
 	puts("  --out <FILE>    Name of output image file (default: 'a.bmp')");
 	puts("  --fg <COLOR>    Foreground color of the image (default: '000000ff')");
@@ -261,31 +240,3 @@ _main_arg_to_u32(const char *arg, u32 *out)
 	return true;
 }
 
-static b8
-_main_arg_to_color(const char *arg, struct img_color *out)
-{
-	dbg_assert(arg != NULL);
-	dbg_assert(out != NULL);
-	u8 vals[8];
-	for (int i = 0; i < 8; i += 1) {
-		DBG_STATIC_ASSERT('0' < 'A');
-		DBG_STATIC_ASSERT('A' < 'a');
-		if (arg[i] == '\0') return false;
-		if (arg[i] < '0') return false;
-		if (arg[i] > 'f') return false;
-		if (arg[i] >= 'a')
-			vals[i] = (u8)(arg[i] - 'a' + 10);
-		else if (arg[i] >= 'A')
-			vals[i] = (u8)(arg[i] - 'A' + 10);
-		else if (arg[i] >= '0')
-			vals[i] = (u8)(arg[i] - '0');
-		else
-			dbg_unreachable();
-	}
-	if (arg[8] != '\0') return false;
-	out->r = (u8)(vals[0] * 16 + vals[1]);
-	out->g = (u8)(vals[2] * 16 + vals[3]);
-	out->b = (u8)(vals[4] * 16 + vals[5]);
-	out->a = (u8)(vals[6] * 16 + vals[7]);
-	return true;
-}

@@ -1,39 +1,36 @@
 #!/usr/bin/env sh
 
-# runs 'make build' with compilers defined in 'rcp/compilers.txt'
-
-# BUG: (not worth fixing)
-# compilers that build executable for WindowsNT will always add '.exe' to the name
-# because of this, make will always try to recompile said files.
+# runs 'cc src/*.c' with compilers defined in 'rcp/compilers.txt'
 
 COMPILERS=$(cat rcp/compilers.txt)
-cc_skipped=
+skipped=
+failed=
 
-echo "SUPERBUILD START"
+mkdir -pv ./bin/superbuild
 
-echo
-echo "SUPERBUILD BEGIN WARMUP"
-make compile_commands.json tmp bin
-echo "SUPERBUILD END WARMUP"
-
-for i in $COMPILERS
-do
-	echo
-	if [[ $(which $i) ]]
-	then
-		echo "SUPERBUILD BEGIN $i"
-		make build CFLAGS="" CC="$i"
-		echo "SUPERBUILD END $i"
+for i in $COMPILERS; do
+	if [[ $(which $i) ]]; then
+		echo "superbuild: $i"
+		mkdir -pv ./bin/superbuild/$i
+		pushd ./bin/superbuild/$i
+		$i ../../../src/*.c
+		if [ $? -ne 0 ]; then
+			echo "superbuild: compilation failed with $i"
+			failed+=" $i"
+		fi
+		popd
 	else
-		echo "SUPERBUILD CANNOT FIND $i"
-		cc_skipped+=" $i"
+		echo "superbuild: could not find $i"
+		skipped+=" $i"
 	fi
+	echo
 done
 
-echo
-if [[ $cc_skipped ]]
-then
-	echo "SUPERBUILD WARNING! some compilers could not be found and were skipped:$cc_skipped"
+if [[ $skipped ]]; then
+	echo "superbuild: some compilers could not be found and were skipped:$skipped"
 fi
-echo "SUPERBUILD DONE"
+if [[ $failed ]]; then
+	echo "superbuild: some compilations failed with following compilers:$failed"
+fi
 
+echo "superbuild: see created binaries at bin/superbuild/"
