@@ -1,11 +1,14 @@
 # usg
-Tiny program for generating Ulam Spiral and writing it as simple image file. \
+Tiny program for generating Ulam Spiral and writing it as image file. \
 Currently supporting uncompressed .bmp and .ppm files. \
 This project has no external dependencies (besides libC itself) \
 and can be built with any C99-compliant compiler.
 
-![spiral](https://github.com/user-attachments/assets/5c51f550-e331-4d55-a561-6ba73e688214)
-
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/5d06502e-d8c1-4da5-b90b-08f4f6687c3a" width="30%" />
+  <img src="https://github.com/user-attachments/assets/61120298-c56a-436a-8388-13fb07b6c6b7" width="30%" />
+  <img src="https://github.com/user-attachments/assets/8fb7f06e-9406-4b5d-915a-6bca264989ef" width="30%" />
+</p>
 
 # BUILDING
 ```sh
