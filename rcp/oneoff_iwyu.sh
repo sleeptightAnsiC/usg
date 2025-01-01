@@ -11,7 +11,6 @@ CC=include-what-you-use
 
 which $CC > /dev/null || ( echo "$CC is required in order to run this script!" && exit 1 )
 
-for i in $(ls $SRC | grep '.c'); do
-	$CC $SRC/$i $CFLAGS
+for i in $(ls $SRC/*.c); do
+	$CC $i $CFLAGS
 done
-

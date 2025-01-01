@@ -1,9 +1,6 @@
 
 #include <inttypes.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
 #include "./img.h"
 #include "./dbg.h"
 #include "./ccl.h"
