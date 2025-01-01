@@ -33,8 +33,8 @@ static b8 _main_arg_to_u32(const char *arg, u32 *out);
 int
 main(int argc, const char *argv[])
 {
-	u32 width = 255;
-	u32 height = 255;
+	u32 width = 201;
+	u32 height = 201;
 	enum img_type type = IMG_TYPE_INVALID;
 	const char *out = NULL;
 	struct img_color fg = {.r=0, .g=0, .b=0, .a=255};
@@ -194,8 +194,8 @@ _main_help(void)
 	puts("Usage:");
 	puts("  usg [option1] [option2] [optionN]");
 	puts("Options:");
-	puts("  --width <NUM>   Width of the image in pixels (default: 255)");
-	puts("  --height <NUM>  Height of the image in pixels (default: 255)");
+	puts("  --width <NUM>   Width of the image in pixels (default: 201)");
+	puts("  --height <NUM>  Height of the image in pixels (default: 201)");
 	puts("  --type <TYPE>   Type of output image file (extension)");
 	puts("                  Accepts either: 'ppm' or 'bmp'");
 	puts("                  If unset, determined automatically based on file name");
