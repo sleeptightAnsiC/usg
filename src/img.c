@@ -64,7 +64,6 @@ img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 s
 	FILE *const file = fopen(name , "w");
 	if (file == NULL) return false;
 	*ctx = (struct img_context){
-		._pixels = 0,
 		._file = file,
 		._width = width,
 		._height = height,
@@ -138,7 +137,6 @@ b8
 img_deinit(struct img_context *ctx)
 {
 	dbg_assert(ctx != NULL);
-	dbg_assert(ctx->_height * ctx->_width == ctx->_pixels);
 	const int err = fclose(ctx->_file);
 	if (err != 0) return false;
 	dbg_log("File closed.");
@@ -149,7 +147,6 @@ void
 img_write(struct img_context *ctx, struct img_color col)
 {
 	dbg_assert(ctx != NULL);
-	dbg_assert(ctx->_height * ctx->_width > ctx->_pixels);
 	switch (ctx->_type) {
 	case IMG_TYPE_PPM: {
 		_IMG_FPRINTF(
@@ -170,7 +167,6 @@ img_write(struct img_context *ctx, struct img_color col)
 	} default:
 		dbg_unreachable();
 	}
-	ctx->_pixels += 1;
 }
 
 u64

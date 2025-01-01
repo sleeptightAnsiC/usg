@@ -56,8 +56,6 @@ struct img_context {
 	u32 _start_y;
 	u32 _start_val;
 	enum img_type _type;
-	// TODO: '_pixels' member is only used for debug purpose
-	u64 _pixels;
 };
 
 
