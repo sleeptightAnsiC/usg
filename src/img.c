@@ -57,72 +57,61 @@ DBG_STATIC_ASSERT(CCL_ENDIAN_ORDER == CCL_ENDIAN_LITTLE || CCL_ENDIAN_ORDER == C
 	((VAL) * (VAL))
 
 
-b8
-img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 start_x, u32 start_y, u32 start_val, enum img_type type)
+void
+img_write_header(struct img_context *ctx)
 {
-	dbg_log("Opening file: %s", name);
-	FILE *const file = fopen(name , "w");
-	if (file == NULL) return false;
-	*ctx = (struct img_context){
-		._file = file,
-		._width = width,
-		._height = height,
-		._type = type,
-		._start_x = start_x,
-		._start_y = start_y,
-		._start_val = start_val,
-	};
-	switch (type) {
+	dbg_assert(ctx != NULL);
+	switch (ctx->type) {
 	case IMG_TYPE_PPM: {
 		// .ppm header starts with "P3" indentifier on the 1st line
 		// followed by width and height (with space between) on the 2nd line
 		// and max color value (255) on the 3rd line
-		_IMG_FPRINTF(file, "P3\n");
-		_IMG_FPRINTF(file, "%"PRIu32" %"PRIu32"\n", width, height);
-		_IMG_FPRINTF(file, "255\n");
+		_IMG_FPRINTF(ctx->file, "P3\n");
+		_IMG_FPRINTF(ctx->file, "%"PRIu32" %"PRIu32"\n", ctx->width, ctx->height);
+		_IMG_FPRINTF(ctx->file, "255\n");
 		break;
 	} case IMG_TYPE_BMP: {
 		const u8 HDRSIZE = 14; // size of file header
 		const u8 DIBSIZE = 40; // size of DIB header
 		{  // file header
 			// BMP Identifier ("BM") - 2 bytes
-			_IMG_FDUMP_LE(u8, 'B', file);
-			_IMG_FDUMP_LE(u8, 'M', file);
+			_IMG_FDUMP_LE(u8, 'B', ctx->file);
+			_IMG_FDUMP_LE(u8, 'M', ctx->file);
 			// The size of the BMP file in bytes (pixel array + headers) - 4 bytes
 			DBG_STATIC_ASSERT(sizeof(struct img_color) == sizeof(u32));
-			size_t bmpsize = width * height * sizeof(struct img_color) + HDRSIZE + DIBSIZE;
-			_IMG_FDUMP_LE(u32, bmpsize, file);
+			size_t bmpsize = ctx->width * ctx->height * sizeof(struct img_color) + HDRSIZE + DIBSIZE;
+			_IMG_FDUMP_LE(u32, bmpsize, ctx->file);
 			// Reserved space (empty in this case, but can be anything) - 2 + 2 bytes
-			_IMG_FDUMP_LE(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, ctx->file);
 			// Starting adress of the pixel array - 4 bytes
-			_IMG_FDUMP_LE(u32, HDRSIZE + DIBSIZE, file);
+			_IMG_FDUMP_LE(u32, HDRSIZE + DIBSIZE, ctx->file);
 		}
 		{  // DIB header BITMAPINFOHEADER
 			// the size of this header, in bytes (40) - 4 bytes
-			_IMG_FDUMP_LE(u32, DIBSIZE, file);
+			_IMG_FDUMP_LE(u32, DIBSIZE, ctx->file);
 			// the bitmap width in pixels (signed integer) - 4 bytes
-			dbg_assert(width < INT32_MAX);
-			_IMG_FDUMP_LE(i32, (i32)width, file);
+			dbg_assert(ctx->width < INT32_MAX);
+			_IMG_FDUMP_LE(i32, (i32)(ctx->width), ctx->file);
 			// the bitmap height in pixels (signed integer) - 4 bytes
-			dbg_assert(height < INT32_MAX);
-			_IMG_FDUMP_LE(i32, (i32)height, file);
+			dbg_assert(ctx->height < INT32_MAX);
+			_IMG_FDUMP_LE(i32, (i32)(ctx->height), ctx->file);
 			// the number of color planes (must be 1) - 2 bytes
-			_IMG_FDUMP_LE(u16, 1, file);
+			_IMG_FDUMP_LE(u16, 1, ctx->file);
 			// the number of bits per pixel, which is the color depth of the image - 2 bytes
-			_IMG_FDUMP_LE(u16, 32, file);
+			_IMG_FDUMP_LE(u16, 32, ctx->file);
 			// the compression method being used (0 for BI_RGB which stands for no compression) - 4 bytes
-			_IMG_FDUMP_LE(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, ctx->file);
 			// the image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps. - 4 bytes
-			_IMG_FDUMP_LE(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, ctx->file);
 			// FIXME: I'm not sure what the next two do but checked in stb_image and it sets them to 0
 			// the horizontal resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			_IMG_FDUMP_LE(i32, 0, file);
+			_IMG_FDUMP_LE(i32, 0, ctx->file);
 			// the vertical resolution of the image. (pixel per metre, signed integer) - 4 bytes
-			_IMG_FDUMP_LE(i32, 0, file);
+			_IMG_FDUMP_LE(i32, 0, ctx->file);
 			// the number of colors in the color palette, or 0 to default to 2n - 4 bytes
-			_IMG_FDUMP_LE(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, ctx->file);
 			// the number of important colors used, or 0 when every color is important; generally ignored - 4 bytes
-			_IMG_FDUMP_LE(u32, 0, file);
+			_IMG_FDUMP_LE(u32, 0, ctx->file);
 		}
 		break;
 	} case IMG_TYPE_INVALID: {
@@ -130,27 +119,16 @@ img_init(struct img_context *ctx, const char *name, u32 width, u32 height, u32 s
 		dbg_unreachable();
 	} // end default
 	} // end switch
-	return true;
-}
-
-b8
-img_deinit(struct img_context *ctx)
-{
-	dbg_assert(ctx != NULL);
-	const int err = fclose(ctx->_file);
-	if (err != 0) return false;
-	dbg_log("File closed.");
-	return true;
 }
 
 void
-img_write(struct img_context *ctx, struct img_color col)
+img_write_pixel(struct img_context *ctx, struct img_color col)
 {
 	dbg_assert(ctx != NULL);
-	switch (ctx->_type) {
+	switch (ctx->type) {
 	case IMG_TYPE_PPM: {
 		_IMG_FPRINTF(
-			ctx->_file,
+			ctx->file,
 			"%"PRIu8" %"PRIu8" %"PRIu8"\n",
 			col.r,
 			col.g,
@@ -158,10 +136,10 @@ img_write(struct img_context *ctx, struct img_color col)
 		(void)col.a;
 		break;
 	} case IMG_TYPE_BMP: {
-		_IMG_FDUMP_LE(u8, col.b, ctx->_file);
-		_IMG_FDUMP_LE(u8, col.g, ctx->_file);
-		_IMG_FDUMP_LE(u8, col.r, ctx->_file);
-		_IMG_FDUMP_LE(u8, col.a, ctx->_file);
+		_IMG_FDUMP_LE(u8, col.b, ctx->file);
+		_IMG_FDUMP_LE(u8, col.g, ctx->file);
+		_IMG_FDUMP_LE(u8, col.r, ctx->file);
+		_IMG_FDUMP_LE(u8, col.a, ctx->file);
 		break;
 	} case IMG_TYPE_INVALID: {
 	} default:
@@ -173,8 +151,8 @@ u64
 img_val_from_coords(struct img_context *ctx, u32 x, u32 y)
 {
 	dbg_assert(ctx != NULL);
-	dbg_assert(x < ctx->_width);
-	dbg_assert(y < ctx->_height);
+	dbg_assert(x < ctx->width);
+	dbg_assert(y < ctx->height);
 
 	// NOTE: BMP stores images bottom-to-top by default.
 	// said format supports flipping the image by setting the height
@@ -182,11 +160,11 @@ img_val_from_coords(struct img_context *ctx, u32 x, u32 y)
 	// do not handle it very well - e.g. some may flip the image as expected
 	// but still display negative height. I don't wanna relay on this and
 	// prefer to flip the image manually.
-	if (ctx->_type == IMG_TYPE_BMP)
-		y = ctx->_height - y - 1;
+	if (ctx->type == IMG_TYPE_BMP)
+		y = ctx->height - y - 1;
 
-	const i64 adj_x = (i64)x - (i64)(ctx->_start_x);
-	const i64 adj_y = (i64)(ctx->_start_y) - (i64)y;
+	const i64 adj_x = (i64)x - (i64)(ctx->start_x);
+	const i64 adj_y = (i64)(ctx->start_y) - (i64)y;
 	const i64 adj_x_abs = _img_abs(adj_x);
 	const i64 adj_y_abs = _img_abs(adj_y);
 	const i64 layer = _img_max(adj_x_abs, adj_y_abs);
@@ -206,8 +184,8 @@ img_val_from_coords(struct img_context *ctx, u32 x, u32 y)
 	}
 
 	dbg_assert(val >= 0);
-	dbg_assert((u64)val <= UINT64_MAX - ctx->_start_val + 1);
-	const u64 out = (u64)val + ctx->_start_val - 1;
+	dbg_assert((u64)val <= UINT64_MAX - ctx->start_val + 1);
+	const u64 out = (u64)val + ctx->start_val - 1;
 	return out;
 }
 
@@ -215,13 +193,13 @@ u64
 img_val_max(struct img_context *ctx)
 {
 	dbg_assert(ctx != NULL);
-	dbg_assert(ctx->_width <= UINT64_MAX / ctx->_height);
-	dbg_assert(ctx->_height <= UINT64_MAX / ctx->_width);
+	dbg_assert(ctx->width <= UINT64_MAX / ctx->height);
+	dbg_assert(ctx->height <= UINT64_MAX / ctx->width);
 	// FIXME: the math for adj_width/height is way too ugly...
-	const u32 adj_width = (ctx->_start_x < ctx->_width / 2) ? ((ctx->_width - ctx->_start_x) * 2 + 1) : (ctx->_start_x * 2 + 1);
-	const u32 adj_height = (ctx->_start_y < ctx->_height / 2) ? ((ctx->_height - ctx->_start_y) * 2 + 1) : (ctx->_start_y * 2 + 1);
+	const u32 adj_width = (ctx->start_x < ctx->width / 2) ? ((ctx->width - ctx->start_x) * 2 + 1) : (ctx->start_x * 2 + 1);
+	const u32 adj_height = (ctx->start_y < ctx->height / 2) ? ((ctx->height - ctx->start_y) * 2 + 1) : (ctx->start_y * 2 + 1);
 	const u32 max = _img_max(adj_width, adj_height);
-	const u64 out = _img_pow2(max) + ctx->_start_val;
+	const u64 out = _img_pow2(max) + ctx->start_val;
 	return out;
 }
 

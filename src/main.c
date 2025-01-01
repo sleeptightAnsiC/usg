@@ -33,16 +33,16 @@ static b8 _main_arg_to_u32(const char *arg, u32 *out);
 int
 main(int argc, const char *argv[])
 {
-	u32 width = 201;
-	u32 height = 201;
-	enum img_type type = IMG_TYPE_INVALID;
+	struct img_context image = {
+		.width = 201,
+		.height = 201,
+		.type = IMG_TYPE_INVALID,
+		.start_val = 1,
+	};
 	const char *out = NULL;
 	struct img_color fg = {.r=0, .g=0, .b=0, .a=255};
 	struct img_color bg = {.r=255, .g=255, .b=255, .a=255};
 	b8 no_stdout = false;
-	u32 start_val = 1;
-	u32 start_x;
-	u32 start_y;
 	b8 start_x_assigned = false;
 	b8 start_y_assigned = false;
 	b8 faded = false;
@@ -66,7 +66,7 @@ main(int argc, const char *argv[])
 			const char *arg = argv[i + 1];
 			if (!img_color_from_str(&bg, arg)) goto invalid_color;
 			++i;
-		} else if (!strcmp(argv[i], "--out")) {
+		} else if (!strcmp(argv[i], "--out") || !strcmp(argv[i], "-o")) {
 			if (i + 1 == argc) goto missing_additional;
 			out = argv[i + 1];
 			++i;
@@ -74,36 +74,36 @@ main(int argc, const char *argv[])
 			if (i + 1 == argc) goto missing_additional;
 			const char *arg = argv[i + 1];
 			if (!strcmp(arg, "bmp")) {
-				type = IMG_TYPE_BMP;
+				image.type = IMG_TYPE_BMP;
 			} else if (!strcmp(arg, "ppm")) {
-				type = IMG_TYPE_PPM;
+				image.type = IMG_TYPE_PPM;
 			} else {
 				_main_exit_failure("Invalid image type: %s\n", arg);
 			}
 			++i;
 		} else if (!strcmp(argv[i], "--width")) {
 			if (i + 1 == argc) goto missing_additional;
-			if (!_main_arg_to_u32(argv[i + 1], &width)) goto invalid_num;
-			if (width == 0)  goto invalid_num;
+			if (!_main_arg_to_u32(argv[i + 1], &(image.width))) goto invalid_num;
+			if (image.width == 0)  goto invalid_num;
 			++i;
 		} else if (!strcmp(argv[i], "--height")) {
 			if (i + 1 == argc) goto missing_additional;
-			if (!_main_arg_to_u32(argv[i + 1], &height)) goto invalid_num;
-			if (height == 0)  goto invalid_num;
+			if (!_main_arg_to_u32(argv[i + 1], &(image.height))) goto invalid_num;
+			if (image.height == 0)  goto invalid_num;
 			++i;
 		} else if (!strcmp(argv[i], "--start-x")) {
 			if (i + 1 == argc) goto missing_additional;
-			if (!_main_arg_to_u32(argv[i + 1], &start_x)) goto invalid_num;
+			if (!_main_arg_to_u32(argv[i + 1], &(image.start_x))) goto invalid_num;
 			start_x_assigned = true;
 			++i;
 		} else if (!strcmp(argv[i], "--start-y")) {
 			if (i + 1 == argc) goto missing_additional;
-			if (!_main_arg_to_u32(argv[i + 1], &start_y)) goto invalid_num;
+			if (!_main_arg_to_u32(argv[i + 1], &(image.start_y))) goto invalid_num;
 			start_y_assigned = true;
 			++i;
 		} else if (!strcmp(argv[i], "--start-val")) {
 			if (i + 1 == argc) goto missing_additional;
-			if (!_main_arg_to_u32(argv[i + 1], &start_val)) goto invalid_num;
+			if (!_main_arg_to_u32(argv[i + 1], &(image.start_val))) goto invalid_num;
 			++i;
 		} else if (!strcmp(argv[i], "--no-stdout")) {
 			no_stdout = true;
@@ -122,9 +122,9 @@ main(int argc, const char *argv[])
 	}
 
 	if (out == NULL) {
-		switch (type) {
+		switch (image.type) {
 		case IMG_TYPE_INVALID:
-			type = IMG_TYPE_BMP;
+			image.type = IMG_TYPE_BMP;
 			/* FALLTHROUGH */
 		case IMG_TYPE_BMP:
 			out = "a.bmp";
@@ -137,31 +137,33 @@ main(int argc, const char *argv[])
 		}
 	}
 
-	if (type == IMG_TYPE_INVALID) {
+	if (image.type == IMG_TYPE_INVALID) {
 		const size_t len = strlen(out);
 		if (len > 4 && !strcmp(out + len - 4, ".bmp"))
-			type = IMG_TYPE_BMP;
+			image.type = IMG_TYPE_BMP;
 		else if (len > 4 && !strcmp(out + len - 4, ".ppm"))
-			type = IMG_TYPE_PPM;
+			image.type = IMG_TYPE_PPM;
 		else
 			_main_exit_failure("Unable to determine file type based on its name: %s\n", out);
 	}
 
 	if (!start_x_assigned)
-		start_x = width / 2;
+		image.start_x = image.width / 2;
 
 	if (!start_y_assigned)
-		start_y = height / 2;
+		image.start_y = image.height / 2;
 
-	struct img_context image;
+	dbg_log("Attempting to open file: %s", out);
+	image.file = fopen(out , "w");
+	if (image.file == NULL)
+		_main_exit_failure("Unable to open file: %s\n", out);
+	img_write_header(&image);
 	struct soe_cache cache;
-	if (!img_init(&image, out, width, height, start_x, start_y, start_val, type))
-		_main_exit_failure("Unable to create image context for %s\n", out);
 	const u64 max = img_val_max(&image);
 	if (!soe_init(&cache, max))
 		_main_exit_failure("Failed to create Prime Numbers cache!\n");
-	for (u32 y = 0; y < height; ++y) {
-		for (u32 x = 0; x < width; ++x) {
+	for (u32 y = 0; y < image.height; ++y) {
+		for (u32 x = 0; x < image.width; ++x) {
 			const u64 val = img_val_from_coords(&image, x, y);
 			const b8 prime = soe_is_prime(&cache, val);
 			struct img_color color;
@@ -172,13 +174,13 @@ main(int argc, const char *argv[])
 			} else {
 				color = prime ? fg : bg;
 			}
-			img_write(&image, color);
+			img_write_pixel(&image, color);
 		}
 	}
 	if (!soe_deinit(&cache))
 		_main_exit_failure("Failed to deinitialize Prime Numbers cache!\n");
-	if (!img_deinit(&image))
-		_main_exit_failure("Unable to deinitialize image context for %s !\n", out);
+	if (fclose(image.file))
+		_main_exit_failure("Unable to close file: %s !\n", out);
 
 	if (!no_stdout)
 		printf("%s\n", out);
