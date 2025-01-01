@@ -42,10 +42,11 @@ main(int argc, const char *argv[])
 	const char *out = NULL;
 	struct img_color fg = {.r=0, .g=0, .b=0, .a=255};
 	struct img_color bg = {.r=255, .g=255, .b=255, .a=255};
-	b8 no_stdout = false;
+	b8 no_path = false;
 	b8 start_x_assigned = false;
 	b8 start_y_assigned = false;
 	b8 faded = false;
+	b8 write_stdout = false;
 
 	// TODO: would be nice to support this someday:
 	// https://en.wikipedia.org/wiki/Prime_k-tuple
@@ -105,8 +106,10 @@ main(int argc, const char *argv[])
 			if (i + 1 == argc) goto missing_additional;
 			if (!_main_arg_to_u32(argv[i + 1], &(image.start_val))) goto invalid_num;
 			++i;
-		} else if (!strcmp(argv[i], "--no-stdout")) {
-			no_stdout = true;
+		} else if (!strcmp(argv[i], "--no-path")) {
+			no_path = true;
+		} else if (!strcmp(argv[i], "--stdout")) {
+			write_stdout = true;
 		} else if (!strcmp(argv[i], "--faded")) {
 			faded = true;
 		} else {
@@ -153,10 +156,14 @@ main(int argc, const char *argv[])
 	if (!start_y_assigned)
 		image.start_y = image.height / 2;
 
-	dbg_log("Attempting to open file: %s", out);
-	image.file = fopen(out , "w");
-	if (image.file == NULL)
-		_main_exit_failure("Unable to open file: %s\n", out);
+	if (write_stdout) {
+		image.file = stdout;
+	} else {
+		dbg_log("Attempting to open file: %s", out);
+		image.file = fopen(out , "w");
+		if (image.file == NULL)
+			_main_exit_failure("Unable to open file: %s\n", out);
+	}
 	img_write_header(&image);
 	struct soe_cache cache;
 	const u64 max = img_val_max(&image);
@@ -179,10 +186,11 @@ main(int argc, const char *argv[])
 	}
 	if (!soe_deinit(&cache))
 		_main_exit_failure("Failed to deinitialize Prime Numbers cache!\n");
-	if (fclose(image.file))
-		_main_exit_failure("Unable to close file: %s !\n", out);
+	if (!write_stdout)
+		if (fclose(image.file))
+			_main_exit_failure("Unable to close file: %s !\n", out);
 
-	if (!no_stdout)
+	if (!no_path && !write_stdout)
 		printf("%s\n", out);
 
 	exit(EXIT_SUCCESS);
@@ -196,24 +204,25 @@ _main_help(void)
 	puts("Usage:");
 	puts("  usg [option1] [option2] [optionN]");
 	puts("Options:");
-	puts("  --width <NUM>   Width of the image in pixels (default: 201)");
-	puts("  --height <NUM>  Height of the image in pixels (default: 201)");
-	puts("  --type <TYPE>   Type of output image file (extension)");
+	puts("  --width NUM     Width of the image in pixels (default: 201)");
+	puts("  --height NUM    Height of the image in pixels (default: 201)");
+	puts("  -o --out FILE   Name of output image file (default: 'a.bmp')");
+	puts("  --type TYPE     Type of output image file (extension)");
 	puts("                  Accepts either: 'ppm' or 'bmp'");
 	puts("                  If unset, determined automatically based on file name");
-	puts("  --out <FILE>    Name of output image file (default: 'a.bmp')");
-	puts("  --fg <COLOR>    Foreground color of the image (default: '000000ff')");
-	puts("  --bg <COLOR>    Background color of the image (default: 'ffffffff')");
+	puts("  --fg COLOR      Foreground color of the image (default: '000000ff')");
+	puts("  --bg COLOR      Background color of the image (default: 'ffffffff')");
 	puts("                  COLOR must be in HEX format represented by exactly eight");
 	puts("                  hexidecimal symbols without any prefix (regex: [0-9a-fA-F])");
 	puts("                  Alpha channel is discarded for image types not supporting it");
-	puts("  --start-x <NUM>  X coordinate where the spiral starts (default: width/2)");
-	puts("  --start-y <NUM>  Y coordinate where the spiral starts (default: height/2)");
+	puts("  --start-x NUM   X coordinate where the spiral starts (default: width/2)");
+	puts("  --start-y NUM   Y coordinate where the spiral starts (default: height/2)");
 	puts("                  NUM must be an OpenGL-style \"screen coordinate\",");
 	puts("                  meaning that 0:0 is in the top left corner of the image");
-	puts("  --start-val <NUM> Value that spiral uses at its starting point (default: 1)");
-	puts("  --no-stdout     Do NOT print the image path to stdout after creation");
-	puts("  --faded         Fade between background and forground colors (default: off)");
+	puts("  --start-val NUM  Value that spiral uses at its starting point (default: 1)");
+	puts("  --no-path       Do NOT print the image path after creation");
+	puts("  --stdout        Write image to standard output instead of file");
+	puts("  --faded         Fade between background and forground colors");
 	puts("                  Fade is calculated based on the value on spiral and");
 	puts("                  the max possible value that can occur on spiral (val/max)");
 	puts("                  Use in order to see how values are being distributed");
