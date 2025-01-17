@@ -9,8 +9,8 @@
 
 RCPDIR = ./rcp
 SRCDIR = ./src
-TMPDIR = ./tmp/$(CC)
-BINDIR = ./bin/$(CC)
+TMPDIR = ./tmp/$(shell basename $(CC))
+BINDIR = ./bin/$(shell basename $(CC))
 
 SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c,$(TMPDIR)/%.o,$(SRCS))
