@@ -41,7 +41,7 @@
 	#if (CCL_ENDIAN_LITTLE != __ORDER_LITTLE_ENDIAN__) || (CCL_ENDIAN_BIG != __ORDER_BIG_ENDIAN__) || (CCL_ENDIAN_PDP != __ORDER_PDP_ENDIAN__)
 		#error "Mismatch between CCL_ENDIAN_* and __ORDER_*_ENDIAN__ macros detected !"
 	#endif
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) || defined(__POCC__)
 	// MSVC does NOT predefine anything about Endianess
 	// and this compiler only suports targets with Little Endian
 	// even MSVC's STL hardcodes it to always be Little Endian
