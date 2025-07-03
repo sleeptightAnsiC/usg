@@ -31,7 +31,7 @@ static b8 _main_arg_to_u32(const char *arg, u32 *out);
 
 
 int
-main(int argc, const char *argv[])
+main(int argc, char *argv[])
 {
 	struct img_context image = {
 		.width = 201,
